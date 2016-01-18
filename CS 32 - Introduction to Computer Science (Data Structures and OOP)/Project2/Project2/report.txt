@@ -1,0 +1,396 @@
+1) Multiset Doubly Linked List Implementation
+
+Each Node in the doubly linked list contains:
+    an ItemType value
+    the quantity of the ItemType value contained (default initialized to 0)
+    a pointer to the previous Node (or to nullptr if first node in the linked list)
+    a pointer to the next Node (or to nullptr if last node in the linked list)
+        both pointers are default initialized to nullptr
+
+Each Multiset contains two Node* pointers:
+    A pointer called head points to the first Node in the doubly linked list
+    A pointer called tail points to the last Node in the doubly linked list
+    ________
+    |_node_| <- head
+    |_node_|
+    |_node_|
+    |_node_|
+    |_node_| <- tail
+
+If the Multiset is empty, both of its private member pointer variables point to the nullptr
+    head -> nullptr
+    tail -> nullptr
+
+
+2) Public function psuedocode
+combine():
+    //Multiset& ms1 and Multiset& ms2 and Multiset& result are passed in by reference
+    create a Multiset called temp
+
+    iterate through ms1
+        x = current node's quantity
+        insert current node's value into temp x times
+        go to the next node
+
+    iterate through ms2
+        x = current node's quantity
+        insert current node's value into temp x times
+        go to the next node
+
+    swap result and temp using Multiset::swap()
+
+subtract():
+    //Multiset& ms1 and Multiset& ms2 and Multiset& result are passed in by reference
+    create a Multiset called temp
+
+    iterate through ms1
+        n1 = current node's quantity
+        v1 = current node's value
+        n2 = using count(), find the quantity of v1 in ms2
+        if n1 > n2 
+            insert v1 into temp (n1-n2) times
+        go to the next node
+
+    swap result and temp using Multiset::swap()
+
+Multiset.copy constructor:
+    //Multiset& src passed in as an argument
+    set head and tail to nullptr
+    create Node* current_node
+    create Node* prev_node
+    create Node* current_src_node
+    point current_src_node to src.head
+
+    //insert the first node, set head
+    if src isn't empty
+        create a new node
+        current_node = new node
+        set current_node value to current_src_node value
+        set current_node quantity to current_src_node quantity
+        set current_node prev pointer to nullptr
+        set head to current_node
+        point current_src_node to the next node in the src linked list
+
+    //insert the rest of the nodes
+    while current_src_node doesn't point to nullptr
+        prev_node = current_node
+        create a new node
+        current_node = new node
+        set current_node value to current_src_node value
+        set current_node quantity to current_src_node quantity
+        set current_node prev pointer to prev_node
+        set prev_node's next pointer to current_node
+        point current_src_node to the next node in the src linked list
+
+    //set tail
+    if current_node doesn't point to nullptr
+        set tail to current_node
+        set current_node's next pointer to nullptr
+
+
+Multiset.assignment operator:
+    //Multiset& src passed in by reference
+    if the multisets are aliased (src and this are the same)
+        return the src Multiset object
+
+    //clear current multiset's linked list
+    iterate through current Multiset's linked list
+        delete current node
+        go to next node
+
+    //copy every node over from src multiset
+    //same code as in the copy constructor
+    set head and tail to nullptr
+    create Node* current_node
+    create Node* prev_node
+    create Node* current_src_node
+    point current_src_node to src.head
+
+    //insert the first node, set head
+    if src isn't empty
+        create a new node
+        current_node = new node
+        set current_node value to current_src_node value
+        set current_node quantity to current_src_node quantity
+        set current_node prev pointer to nullptr
+        set head to current_node
+        point current_src_node to the next node in the src linked list
+
+    //insert the rest of the nodes
+    while current_src_node doesn't point to nullptr
+        prev_node = current_node
+        create a new node
+        current_node = new node
+        set current_node value to current_src_node value
+        set current_node quantity to current_src_node quantity
+        set current_node prev pointer to prev_node
+        set prev_node's next pointer to current_node
+        point current_src_node to the next node in the src linked list
+
+    //set tail
+    if current_node doesn't point to nullptr
+        set tail to current_node
+        set current_node's next pointer to nullptr
+
+    //return this object
+    return (*this)
+
+
+Multiset.empty():
+    if head and tail point to nullptr
+        multiset is empty
+    else
+        multiset is not empty
+
+
+Multiset.size():
+    sum = 0
+    increment through linked list nodes
+        add "quantity" of current node to sum
+        go to next node
+    return sum (summation of quantities)
+
+
+Multiset.uniqueSize():
+    sum = 0
+    increment through linked list nodes
+        increment sum by 1
+        go to next node
+    return sum (# of nodes)
+
+
+Multiset.insert():
+    //value exists in Multiset already
+    increment through linked list nodes
+        if "value" of current node is the value inserted
+            increment "quantity" of current node by 1
+            return true
+        go to next node
+
+    //value doesnt exist in Multiset
+    //inserts a node at the beginning of the linked list
+    temp pointer points to head
+    create new node, point head to new node
+    set "value" of new node to value inserted
+    set "quantity" of new node to 1
+    set "next" of new node to the node pointed to by temp
+    set "prev" of new node to nullptr
+
+    if tail points at nullptr
+        point tail to the new node
+
+    return true
+
+
+Multiset.erase():
+    //value exists in Multiset
+    increment through linked list nodes
+        if value equals current node's value
+            if quantity is more than 1
+                decrement the quantity by 1
+                return 1
+            if the quantity is 1
+                //let the previous node be A
+                //current node be B
+                //next node be C
+                if node is the first node in the linked list
+                    set head to the next node (C)
+                    set the next node's (C) prev pointer to nullptr
+                    delete current node (B)
+                else if node is the last item in the linked list
+                    set tail to the previous node (A)
+                    set previous node's (A) next pointer to nullptr
+                    delete current node (B)
+                else if node is the only item in the linked list
+                    set head to nullptr
+                    set tail to nullptr
+                    delete current node (B)
+                else
+                    temp = current node's (B) quantity
+                    point the previous node's (A) "next" pointer to the next node (C)
+                    point the next node's (C) "prev" pointer to the previous node (A)
+                    delete the current node (B)
+                return 1
+        go to the next node
+
+    //value doesnt exist
+    return 0
+
+
+Multiset.eraseAll():
+    //value exists in Multiset
+    increment through linked list nodes
+        if value equals current node's value
+            //let the previous node be A
+            //current node be B
+            //next node be C
+            temp = current node's (B) quantity
+            if node is the first node in the linked list
+                set head to the next node (C)
+                set the next node's (C) prev pointer to nullptr
+                delete current node (B)
+            else if node is the last item in the linked list
+                set tail to the previous node (A)
+                set previous node's (A) next pointer to nullptr
+                delete current node (B)
+            else if node is the only item in the linked list
+                set head to nullptr
+                set tail to nullptr
+                delete current node (B)
+            else
+                point the previous node's (A) "next" pointer to the next node (C)
+                point the next node's (C) "prev" pointer to the previous node (A)
+                delete the current node (B)
+            return temp (Bs quantity)
+        go to the next node
+
+    //value doesnt exist
+    return 0
+
+
+Multiset.contains():
+    //value exists in Multiset
+    increment through linked list nodes
+        if value equals current node's value
+            return true
+        go to the next node
+
+    //value doesnt exist
+    return false
+
+
+Multiset.count():
+    //value exists in Multiset
+    increment through linked list nodes
+        if value equals current node's value
+            return current node's quantity
+        go to the next node
+
+    //value doesnt exist
+    return 0
+
+
+Multiset.get():
+    //there are the same amount of nodes as uniquesize() returns
+    //int i is passed in, i ranges from 0 to uniquesize()
+    //ItemType& value is passed in
+    "skip" = i
+    Node* current_node = head
+    while skip is greater than zero and current_node doesnt point to nullptr
+        point current_node to the next node in the linked list
+        decrement skip by 1
+
+    //temp points at the node of interest
+    set the ItemType argument (passed in by reference) equal to the ItemType value of the current_node
+    return the current_node's quantity
+
+
+Multiset.swap():
+    //Multiset& other is passed in by reference
+    swap the current Multiset's head pointer with the other's head pointer
+    swap the current Multiset's tail pointer with the other's tail pointer
+    return true
+
+
+3) Test Cases
+//default constructor
+Multiset m1;
+
+//empty multiset
+assert(m1.size() == 0);             // test size
+assert(m1.empty());                 // test empty
+assert(m1.erase("cumin") == 0);     // nothing to erase
+
+//insert() and contains() and count()
+assert(m1.insert("thing1"));        //insert 1 item
+assert(m1.contains("thing1"));      //test contains with single item
+assert(m1.count("thing1") == 1);    //test count with single item
+assert(m1.insert("thing2"));        //inserting multiple different items
+assert(m1.contains("thing1") && m1.contains("thing2"));
+assert(m1.count("thing1") == 1 && m1.count("thing2") == 1);
+assert(m1.insert("thing3"));
+assert(m1.insert("thing3"));
+assert(m1.insert("thing3"));        //inserting multiple copies of a single item
+assert(m1.contains("thing3"));      //test contains with multiple copies of an item
+assert(m1.count("thing3") == 3);    //test count with multiple copies of an item
+assert(!m1.contains("thing4"));     //doesn't contain "thing4"
+assert(m1.count("thing4") == 0);    //doesn't contain "thing4"
+assert(m1.insert("thing4"));
+assert(m1.insert("thing4"));
+assert(m1.insert("thing4"));
+assert(m1.insert("thing4"));
+
+//erase() and eraseAll()
+assert(m1.count("thing4") == 4);    //count before erasing one is 4
+assert(m1.erase("thing4") == 1);    //remove one
+assert(m1.count("thing4") == 3);    //count after erasing one is 3
+assert(m1.erase("thing4") == 1);
+assert(m1.erase("thing4") == 1);    //erase multiple instances of item
+assert(m1.count("thing4") == 1);    //count after erasing 3 is 1
+assert(m1.erase("thing4") == 1);    //erase final one
+assert(m1.count("thing4") == 0);    //count after erasing final one is 0
+assert(m1.eraseAll("thing3") == 3); //erase 3 at once
+assert(m1.erase("thing3") == 0);    //nothing to erase
+assert(m1.erase("thing4") == 0);    //nothing to erase
+assert(m1.eraseAll("thing3") == 0); //nothing to erase
+assert(m1.eraseAll("thing4") == 0); //nothing to erase
+assert(m1.eraseAll("thing2") == 1);
+assert(m1.eraseAll("thing1") == 1); //erase final item
+
+//empty()
+assert(m1.empty());
+
+//size() and uniqueSize()
+assert(m1.size() == 0);             //test size
+assert(m1.uniqueSize() == 0);       //test uniqueSize
+assert(m1.insert("thing1"));
+assert(m1.size() == 1);             //test size
+assert(m1.uniqueSize() == 1);       //test uniqueSize
+assert(m1.insert("thing2"));
+assert(m1.size() == 2);             //test size
+assert(m1.uniqueSize() == 2);       //test uniqueSize
+assert(m1.insert("thing2"));
+assert(m1.insert("thing2"));
+assert(m1.size() == 4);
+assert(m1.uniqueSize() == 2);       //size and uniqueSize should differ if duplicate items
+
+//get()
+assert(m1.insert("thing3"));
+ItemType temp = "xxx";
+assert(m1.get(-1, temp) == 0 && temp == "xxx");     //negative number, temp is unchanged
+assert((m1.get(0, temp) == 1 && temp == "thing1") || (m1.get(0, temp) == 3 && temp == "thing2") || (m1.get(0, temp) == 1 && temp == "thing3"));   //0, temp is changed
+assert((m1.get(1, temp) == 1 && temp == "thing1") || (m1.get(1, temp) == 3 && temp == "thing2") || (m1.get(1, temp) == 1 && temp == "thing3"));   //multiple instances
+assert((m1.get(2, temp) == 1 && temp == "thing1") || (m1.get(2, temp) == 3 && temp == "thing2") || (m1.get(2, temp) == 1 && temp == "thing3"));   //instance at i = uniqueSize()
+
+//swap(), copy constructor, assignment operator
+Multiset m2(m1);                        //copy constructor
+Multiset m3;
+m3 = m1;                                //assignment operator
+assert(m3.eraseAll("thing3") == 1);
+assert(m3.eraseAll("thing2") == 3);
+m2.swap(m3);                            //swap
+assert(m3.count("thing3") == 1);
+assert(m3.count("thing2") == 3);
+assert(m2.count("thing3") == 0);
+assert(m2.count("thing2") == 0);        //check that swap worked
+
+//combine and subtract
+Multiset result;
+combine(m1, m2, result);                //combine
+assert(result.count("thing1") == 2);
+assert(result.count("thing2") == 3);
+assert(result.count("thing3") == 1);    //combine works
+combine(m1, m2, m1);                    //combine with aliasing
+assert(m1.count("thing1") == 2);
+assert(m1.count("thing2") == 3);
+assert(m1.count("thing3") == 1);        //combine works
+//m1 has 2 thing1, 3 thing2, 1 thing3
+//m2 has 1 thing1
+subtract(m1, m2, result);
+assert(result.count("thing1") == 1);
+assert(result.count("thing2") == 3);
+assert(result.count("thing3") == 1);    //subtract works
+subtract(m1, m2, m1);
+assert(m1.count("thing1") == 1);
+assert(m1.count("thing2") == 3);
+assert(m1.count("thing3") == 1);    //subtract works with aliasing

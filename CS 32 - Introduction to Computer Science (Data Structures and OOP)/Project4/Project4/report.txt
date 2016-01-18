@@ -1,0 +1,117 @@
+//////////////////////////////////////////////////////
+//	1) Bugs or Problems
+//////////////////////////////////////////////////////
+I had no bugs or problems in my project.
+
+//////////////////////////////////////////////////////
+//	2) Big(O) requirements
+//////////////////////////////////////////////////////
+Everything fulfills the Big(O) requirements for this project.
+
+//////////////////////////////////////////////////////
+//	3) set(), touch() and discard() pseudocode
+//////////////////////////////////////////////////////
+In my HashTable object, I had a private ADT, called a Node. I also had a pointer to an array of Node pointers. The array of pointers was called m_buckets, and each spot in the array holds the head pointer of a doubly-linked list. Each Node was part of two doubly linked lists, one that kept track of history, and one held in the array m_buckets. As a result, the Node contained: previous/next pointers to the other Nodes in the array linked list, previous/next pointers to the other Nodes in the history linked list, and the value and the key being stored in the hash table. All the pointers for a Node are by default set to nullptr. I also held a head pointer to my history linked list in my HashTable object. The head of the history linked list is the most recently added/modified Node/key, and the tail is the least recently modified. In addition, HashTable holds an int that counts the current number of unique items in the Hash Table (current capacity)
+
+m_buckets
+|
+v
+ _
+|_|-> doubly linked list of Nodes
+|_|-> doubly linked list of Nodes
+|_|-> doubly linked list of Nodes
+|_|-> doubly linked list of Nodes, etc
+
+set() pseudocode:
+	compute the hash of the key being inserted
+	modulo the hash by the number of buckets to return the index
+
+	if the bucket at the given index (m_buckets[index]) points to nullptr and if the current capacity is less than the maximum capacity
+		create a new node with the given key and value
+		if the node is not permanent
+			set it's history next pointer equal to the head pointer of the history linked list
+			if history list is not empty
+				set the head node's history previous pointer to the newly created node
+		point the bucket at the index to the newly created node
+		increment the current capacity
+		return true;
+	else (there is a collision)
+		// this goes to the last Node in the linked list
+		while the Node's next pointer is not nullptr
+			if the Node's key matches the key being added
+				update the Node's value
+				touch() the Node
+				return true;
+			go to the next Node
+		if the current capacity is less than the maximum capacity
+		create a new node with the given key and value
+		if the node is not permanent
+			set it's history next pointer equal to the head pointer of the history linked list
+			if history list is not empty
+				set the head node's history previous pointer to the newly created node
+		point the current Node's next pointer to the newly created node
+		increment the current capacity
+		return true;
+	return false;
+
+
+
+touch() pseudocode:
+	begin at the head pointer of the history linked list
+	while the node being examined is not nullptr
+		if the key matches the key being touched
+			if the node being examined is the head
+				return true;
+			otherwise
+				if the node being examined isn’t the last in the linked list
+					set the previous node's history next pointer to point to the node after the one being examined
+					set the next node's history previous pointer to point to the node before the one being examined
+				if the node being examined is the last in the linked list
+					set the previous node's next pointer to nullptr
+				set the current node's previous history pointer to nullptr
+				set the current node's next history pointer to the history head pointer
+				point the history head to the current node
+				return true
+		go to the next node in the history linked list (possible the next node does not exist, and that the "node" being examined is nullptr)
+
+	// key was not found
+	return false;
+
+
+
+discard() pseudocode:
+	if there is nothing in the history linked list
+		return false;
+	begin at the head pointer of the history linked list
+	while the next Node in the history linked list does not point to nullptr
+		go to the next Node in the history linked list
+	// the current Node being examined now is the last item in the history linked list
+
+	set key to the Node's key
+	set value to the Node's value
+
+	// update the history
+	if there is more than one item in the history linked list
+		set the previous Node's next history pointer to nullptr
+	else set the history head to the current Node’s next history pointer
+
+	compute the hash of the key being inserted
+	modulo the hash by the number of buckets to return the index
+	
+	if the Node being examined is the front of the bucket linked list (previous pointer points to nullptr)
+		if the next Node in the bucket linked list exists
+			set the bucket linked list head (m_buckets[index]) to point to the next Node
+			set the next Node's prev pointer to nullptr
+		else
+			set the bucket linked list head (m_buckets[index]) to point to nullptr
+		delete the Node being examined
+		decrement the current capacity
+		return true;
+
+	else if the Node being examined is in the middle or back of the bucket linked list
+		set the previous Node's next pointer to the current Node's next pointer in the the linked list (could be nullptr)
+		delete the Node being examined
+		decrement the current capacity
+		return true;
+
+

@@ -1,0 +1,34 @@
+2) First 12 points popped off the stack
+(row, col)
+(6, 4)
+(6, 3)
+(6, 5)
+(7, 5)
+(8, 5)
+(8, 6)
+(8, 7)
+(8, 8)
+(7, 8)
+(6, 6)
+(5, 4)
+(4, 4)
+
+
+4) First 12 points popped off the queue
+(row, col)
+(6, 4)
+(5, 4)
+(6, 5)
+(6, 3)
+(4, 4)
+(6, 6)
+(7, 5)
+(3, 4)
+(4, 5)
+(8, 5)
+(2, 4)
+(4, 6)
+
+The two programs differ in the order they visit the cells.
+In the stack-based method, the most recently visited cell's neighbors are the next to be visited. Essentially, this means that once the program starts exploring a certain path, it will keep exploring that path until it reaches a dead end or it reaches the end coordinates (depth first).
+In the queue-based methods, the most recently visted cell's neighbors are added to the end of the queue of cells to be processed. This means that the program will explore the cells closest to the start cell, in increasing rectilinear distance (breadth first).

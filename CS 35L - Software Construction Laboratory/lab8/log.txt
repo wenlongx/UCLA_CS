@@ -1,0 +1,41 @@
+Wenlong Xiong
+UID: 204407085
+
+First, I logged onto the linux server with the following command:
+    ssh xiong@lnxsrv.seas.ucla.edu
+Then, I checked that the coreutils sort was the correct version (>8.6) with the following command:
+    sort --version
+I got the following output, so the version of sort is up to date:
+    sort (GNU coreutils) 8.24
+    Copyright (C) 2015 Free Software Foundation, Inc.
+    License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+    This is free software: you are free to change and redistribute it.
+    There is NO WARRANTY, to the extent permitted by law.
+    Written by Mike Haertel and Paul Eggert.
+Afterwards, I ran the following command:
+    od -An -f -N 4000000 < /dev/urandom | tr -s ' ' '\n' > numbers.txt
+This created the file of floats. I then opened the file in vim and deleted the first line, which 
+was a blank line (newline).
+    vim numbers.txt
+Afterwards, I ran the sort command on the numbers.txt file, with different number of threads.
+    time -p sort -g --parallel=1 numbers.txt > /dev/null
+    time -p sort -g --parallel=2 numbers.txt > /dev/null
+    time -p sort -g --parallel=4 numbers.txt > /dev/null
+    time -p sort -g --parallel=8 numbers.txt > /dev/null
+This yielded the following times:
+1 Thread:
+    real 8.17
+    user 8.15
+    sys 0.01    
+2 Threads:
+    real 4.37
+    user 8.25
+    sys 0.02
+4 Threads:
+    real 2.56
+    user 8.44
+    sys 0.02
+8 Threads:
+    real 1.76
+    user 9.15
+    sys 0.04

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+ <title>CS 32 Project 3, Winter 2015</title>
+</head>
+<body>
+<div align="right">
+Winter 2015 CS 32 
+</div>
+<div align="center">
+<h2>Programming Assignment 3<br />
+Boulder Blast</h2>
+</div>
+<p>
+The <a href="spec.pdf">Project 3 specification document</a> is complete.
+</p><p>
+At 10 PM Monday 2/16, a paragraph was added on page 12 explaining what value
+<em>StudentWorld::init()</em> must return.
+</p><p>
+To see what the game looks like in action:
+</p>
+<ul>
+<li>
+On a Windows machine:  Open <a href="BoulderBlast-sample-windows.zip">the
+sample executable zip file</a> and drag the folder named BoulderBlast in it
+to your desktop.  In that desktop folder, double-click on the BoulderBlast
+application.
+<!--
+The executable runs on the SEASnet Windows server; it may
+not run on all Windows machines.  We're working on that.
+-->
+</li><li>
+On a Mac:  Unzip <a href="BoulderBlast-sample-mac.zip">the sample executable
+zip file</a>.  In that zip file is a file named README.txt that tells you
+how to launch the program.
+</li>
+</ol>
+</li>
+</ul>
+<p>
+Use the arrow keys (or 8426 or wasd) to move or the space bar to shoot.
+You can hit Escape to sacrifice a life and restart the current level.
+You can type q to quit the game prematurely.  Hitting the f key
+freezes the action; hitting any key after that takes one action step,
+except that hitting the r key resumes regular play.  (This is not intended
+for normal game play, but is useful for testing.)
+</p><p>
+You can also download the project skeletons with the code we've written,
+for <a href="BoulderBlast-skeleton-windows.zip">Windows</a>,
+<a href="BoulderBlast-skeleton-mac.zip">Mac</a>, or
+<a href="linux.html">Linux</a>, and make sure you can build and run them. 
+All they'll do is have you lose a life each time you hit Enter, but at
+least you can verify that the graphics library works.
+</p><p>
+The <strong>only</strong> files you will modify are Actor.h, Actor.cpp,
+StudentWorld.h, and StudentWorld.cpp.  Indeed, those will be the only code
+files you'll turn in, so in implementing your solution, you must
+<strong>not</strong> depend on any changes you make to code files other than
+those four.
+</p><p>
+At some point in Project 3, you may find the
+<a href="../../stringstreams.html">Stringstreams</a> writeup helpful.
+</p><p>
+To make testing your program easier, you might want to slow down the game.
+If you change the value of the constant MS_PER_FRAMES in GameController.cpp 
+from 10 to a higher value, the game will run more slowly.
+</p><p>
+When testing your program, you may want to set up level files with easy-to-test
+configurations.  The level files we provided are puzzles that make the game
+interesting, but surely you don't want have to play a while before you reach
+the situation you want to test!
+</p>
+</body>
+</html>

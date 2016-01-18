@@ -1,0 +1,61 @@
+Wenlong Xiong
+204407085
+
+Optimized (-O2) Assembly Code
+testovf:
+	pushl   %ebp
+	xorl    %eax, %eax
+	movl    %esp, %ebp
+	popl    %ebp
+	ret
+
+Optimized ftrapv (-O2 ftrapv) Assembly Code
+testovf:
+        pushl   %ebp
+        movl    %esp, %ebp
+        subl    $8, %esp
+        movl    big, %eax
+        leave
+        leal    1(%eax), %edx
+        cmpl    %edx, %eax
+        setg    %al
+        movzbl  %al, %eax
+        ret
+
+Optimized fwrapv (-O2 fwrapv) Assembly Code
+testovf:
+        movl    big, %eax
+        pushl   %ebp
+        movl    %esp, %ebp
+        popl    %ebp
+        leal    1(%eax), %edx
+        cmpl    %edx, %eax
+        setg    %al
+        movzbl  %al, %eax
+        ret
+
+The -O2 optimization returns 0, -O2 -ftrapv returns 1, and the -O2 -wrapv returns 1.
+
+In the -O2 optimization, the program uses the mathematical rule that for any x (x+1 < x) will always be false, and doesn’t look at the values being passed in (INT_MAX). As a result, the compiler removes the comparison (big+1 < big) and replaces it with 0 in all cases (xorl %eax,%eax always returns 0).
+
+In both the optimized ftrapv and fwrapv:
+        movl    big, %eax       # puts the value of big into eax
+        pushl   %ebp            
+        movl    %esp, %ebp      # these two lines set up the new stack frame
+Only in ftrapv you have this instruction:
+        subl    $8, esp         # decrements stack pointer
+        leave                   # incrememnts stack pointer, sets ebp to previous value of ebp, increments stack pointer
+Only in fwrapv you have this instruction:
+        popl    %ebp            # sets ebp to previous value of ebp, increments stack pointer
+However, both instructions from ftrapv and fwrapv do the same thing. The reason they are written differently is because they are remnants of the optimization - the compiler removed parts of the code during the optimization process, and the remaining code is slightly different.
+Then afterwards, in both the optimized ftrapv and fwrapv:
+        leal    1(%eax), %edx   # puts big + 1 into edx
+        cmpl    %edx, %eax      # sets flags based on (big) - (big + 1) 
+        setg    %al             # sets al register to 0x1 or 0x0 based on flags
+        movzbl  %al, %eax       # prepares to return the value of al
+        ret                     # returns al register
+
+Usually when code is compiled using -ftrapv semantics, a function call to “__addvsi3” is included - this function call kills the program if there is an integer overflow. However, in the -O2 -ftrapv optimization, because the compiler can generate more efficient code by assuming there is never signed integer overflow (that an addition/subtraction/multiplication never goes above INT_MAX), the -02 (2nd level of optimization) overrides the -ftrapv and assumes there will never be integer overflow, removing the function call to “__addvsi3”. As a result in the -O2 -ftrapv optimization, even if there is an integer overflow, the program does not trap.
+
+The same thing occurs when the code is compiled using -fwrapv semantics. In -fwrapv, when a signed integer overflows, the result wraps around based on the two's complement representation of the binary. In the -O2 -fwrapv optimization, the compiler does the same thing as the -ftrapv optimization and assumes that there is never signed integer overflow so that it can generate more efficient code. However, because of how two's complement arithmetic works, integer overflow will wrap around anyways. As a result, the comparision (big+1 < big) holds true when big is INT_MAX.
+        

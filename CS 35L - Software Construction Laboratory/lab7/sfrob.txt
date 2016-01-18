@@ -1,0 +1,70 @@
+Wenlong Xiong
+UID: 204407085
+
+I compared the sfrob and sfrobu programs, with the following results. From the last few comparisons, it is apparent that the time it takes for sfrob 
+and sfrobu to complete is a function O(N logN). This is because we use quicksort to sort the lines, and quicksort is O(N logN) in its average case. 
+For larger number of lines, the number of comparisons is about (2.5 * log N) times the number of lines, where the number of lines is N.
+
+Lines: 8
+Comparisons: 17
+sfrob
+    real    0m0.002s
+    user    0m0.000s
+    sys 0m0.001s
+sfrobu
+    real    0m0.002s
+    user    0m0.001s
+    sys 0m0.001s
+
+Lines: 32
+Comparisons: 122
+sfrob
+    real    0m0.001s
+    user    0m0.001s
+    sys 0m0.000s
+sfrobu
+    real    0m0.002s
+    user    0m0.000s
+    sys 0m0.001s
+
+Lines: 4096
+Comparisons: 41741
+sfrob
+    real    0m0.005s
+    user    0m0.004s
+    sys 0m0.000s
+sfrobu
+    real    0m0.031s
+    user    0m0.005s
+    sys 0m0.025s
+
+Lines: 8192
+Comparisons: 91150
+sfrob
+    real    0m0.009s
+    user    0m0.005s
+    sys 0m0.004s
+sfrobu
+    real    0m0.061s
+    user    0m0.009s
+    sys 0m0.051s
+
+Lines: 16384
+Comparisons: 197647
+sfrob
+    real    0m0.017s
+    user    0m0.015s
+    sys 0m0.000s
+sfrobu
+    real    0m0.121s
+    user    0m0.020s
+    sys 0m0.100s
+
+I also tested the sfrobs script in relation to the previous two scripts. Below is the run time when it's used on the same file, with 16384 lines.
+
+Lines: 16384
+    real    0m0.029s
+    user    0m0.024s
+    sys 0m0.009s
+
+sfrobs was slower compared to sfrob, but faster than sfrobu.

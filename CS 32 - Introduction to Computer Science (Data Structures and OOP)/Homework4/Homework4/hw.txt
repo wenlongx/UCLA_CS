@@ -1,0 +1,15 @@
+2)
+In the call to Multiset<URL>::insert(), we compare a URL object with another URL object using the != operator. However, this != operator is undefined for URL objects, so the program results in a compilation error.
+
+3)	b)
+	You would not be able to implement this because there is no way to keep track of the total path (of the previous menus) As a result, you would only know the current menu, but not the full path, and would not be able to print the complete path to the menu items.
+
+4)	a)
+	This algorithm is O(N^3), because there are 3 nested for loops that add dist[i][k] + dist[k][j] N times.
+	b)
+	The time complexity of the algorithm is still O(N^3), because in the second for loop, we take i to be the largest value it could be (which is N).
+
+5)	a)
+	The algorithm is O(N^2), because the Multiset m1 traversal for loop is order of O(N), and get(), contains(), and insert() within the for loop are all O(N). Swap is O(1), and as a result is negligible compared to the rest of the algorithm
+	b)
+	Reserving memory for the vector, copying items into the vector, adding nodes and deleting excess nodes in the result vector are all O(N). However, the sort is O(N log N), so the total time complexity for this algorithm is O(N log N).

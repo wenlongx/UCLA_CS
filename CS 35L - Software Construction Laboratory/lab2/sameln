@@ -1,0 +1,61 @@
+#!/bin/bash
+OLDIFS=$IFS
+IFS=$'\t\n'
+
+dir=$1
+RESULT=`ls -a $dir`
+declare -a ARRAY
+declare -a FILE_ARRAY
+let count=0
+for FILE in $RESULT
+do
+    if [ ! -L "$dir/$FILE" ]
+    then
+        if [ -f "$dir/$FILE" ]
+        then
+            echo "$dir/$FILE is a regular file."
+            ARRAY[$count]="$dir/$FILE"
+            FILE_ARRAY[$count]="$FILE"
+            let count=count+1
+        else
+            echo "$dir/$FILE is NOT a regular file."
+        fi
+    fi
+done
+echo "There are $count regular files."
+
+index1=$count
+while [ $index1 -ge 0 ]
+do
+    FILE1=${ARRAY[$index1]}
+    echo $FILE1
+    let index2=$index1+1
+    while [ $index2 -lt $count ]
+    do
+        FILE2=${ARRAY[$index2]}
+        cmp -- $FILE1 $FILE2
+        if [ $? -eq 0 ]
+        then
+            FILE1_FC=${FILE1:0:1}
+            echo $FILE1_FC
+            FILE2_FC=${FILE2:0:1}
+            echo $FILE2_FC
+            if [ $FILE1_FC = " " ]
+            then
+                if [ $FILE2_FC = "." ]
+                then
+                    temp=$FILE1
+                    FILE1=$FILE2
+                    FILE2=$temp
+                    ARRAY[$index1]=$FILE1
+                    ARRAY[$index2]=$FILE2
+                fi
+            fi
+            rm $FILE2
+            ln $FILE1 $FILE2
+        fi
+        let index2=$index2+1
+    done
+    let index1=$index1-1
+done
+IFS=$OLDIFS

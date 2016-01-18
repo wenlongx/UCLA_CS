@@ -1,0 +1,13 @@
+CC = gcc
+CFLAGS = -O2 -g3 -Wall -Wextra -march=native -mtune=native -mrdrnd
+
+
+make .o from .c
+for sw and hw
+
+make .so from .o
+
+make .o from cpuid randmain
+make .o from .c file
+
+

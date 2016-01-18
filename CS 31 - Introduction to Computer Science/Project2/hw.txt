@@ -1,0 +1,86 @@
+1.
+The output should be:
+endlendl
+grendel
+
+2.
+The program outputs 1 pound symbol on the first line (aligned to the right), 2 on the second, 3 on the third and so on until the number of lines equals the input number.
+
+3.
+#include <iostream>
+using namespace std;
+
+int main()
+{
+    int side;
+    
+    cout << "Enter a number: ";
+    cin >> side;
+    
+    for (int i = side; i > 0; i--)
+    {
+        int j = 0;
+        while (j < i-1)
+        {
+            cout << " ";
+            j++;
+        }
+        while (j < side)
+        {
+            cout << "#";
+            j++;
+        }
+        cout << endl;
+    }
+}
+
+4.
+#include <iostream>
+using namespace std;
+
+int main()
+{
+    int side;
+    
+    cout << "Enter a number: ";
+    cin >> side;
+    int i = side;
+    if (i > 0)
+    {
+        do
+        {
+            int j;
+            for (j = 0; j < i-1; j++)
+            {
+                cout << " ";
+            }
+            for ( ; j < side; j++)
+            {
+                cout << "#";
+            }
+            cout << endl;
+            i--;
+            
+        } while (i > 0);
+    }
+    
+}
+
+5.
+switch (week)
+{
+    case 0:
+        cout << "first lecture";
+        break;
+    case 4:
+        cout << "midterm";
+        break;
+    case 8:
+        cout << "midterm";
+        break;
+    case 10:
+        cout << "final";
+        break;
+    default:
+        cout << "nothing";
+}

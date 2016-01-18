@@ -1,0 +1,39 @@
+Wenlong Xiong
+204407085
+Lab 3
+
+Q1:
+Brady's patch removed the line "case_long_iso_time_style:" because the only 
+line that referenced 
+that tag (the line goto case_long_iso_time_style;) was removed as well. The 
+code will work even 
+without removing the line "case_long_iso_time_style:", because the jump to that 
+line that was in 
+case locale_time_style was removed.
+Q2:
+The patch removes the fallback to the long_iso_time_style format. However, the 
+function dcgettext 
+is a translation function, so there should not be a problem when the code is 
+used in non-English 
+speaking countries.
+
+
+Q3:
+In line 13:
+    return random.choice(self.lines)
+The program returns the following error:
+    IndexError: list index out of range
+This is because the an empty file is a null array, and when we try to access a 
+specific index in 
+the null array, we get an IndexError.
+
+Q4:
+When the script is run with python 3 instead of python 2, we get the following 
+error:
+  File "randline.py", line 44
+    except IOError as (errno, strerror):
+                      ^
+SyntaxError: invalid syntax
+This is because in python 2.7, exceptions could be passed in as iterables. 
+However, in python 3.4, 
+the syntax was changed to not allow this, because it was bad practice.

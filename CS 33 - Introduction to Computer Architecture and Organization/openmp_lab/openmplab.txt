@@ -1,0 +1,218 @@
+Wenlong Xiong
+204407085
+
+Files included:
+openmplab.txt
+func.c
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		1) Setting Up
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	First, I downloaded the OpenMP lab files as a tar ball onto my own computer. Then, I transferred it to the linux server using the terminal command:
+		scp ~/Downloads/openmplab.tar xiong@lnxsrv.seas.ucla.edu:~/
+	Then, I logged onto the linux server by typing the following command into the shell, and entering my password:
+		ssh xiong@lnxsrv.seas.ucla.edu
+	and unzipped the tar ball by using the terminal command:
+		tar -xvf openmplab.tar
+	I then navigated to the folder containing the files needed by using the terminal command:
+		cd openmp
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		2) Building the filter executable
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	I built an executable of the sequential version of filter by using the following command:
+		make seq
+	This produced an executable called:
+		seq
+	I ran this executable using the command:
+		./seq
+	Which produced the following output, or something similar.
+		FUNC TIME : 0.604143
+		TOTAL TIME : 3.887749
+	The FUNC TIME represents the amount of time it takes for the filter function (which calls the 6 functions func0-func5 that we're trying to optimize) to run. I ran the seq executable ~10 
+times, and taking the median of the FUNC TIME times. I ended up getting 0.5999195 as the median, which I used as the amount of time it takes to run the program sequentially.
+
+	We did the same for parallel version of filter. First, we cleared any previous builds using the command:
+		make clean
+	Then, we built an executable for the parallel version of filter by using the following command:
+		make omp
+	This produced an executable called:
+		omp
+	I ran this executable using the command:
+		./omp
+	Which produced output in the same format as the sequential executable:
+		FUNC TIME : 0.074521
+		TOTAL TIME : 3.442213
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		3) Determining what to parallelize
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	According to Amdahl's law, the total speedup of a system is limited when only a part of the system is being improved. This means that, if only a small portion of a system is improved, the 
+total speedup will not increase by much, whereas if a large portion of the system is improved by a small amount, there will be larger speedup. As a result, I wanted to see which of the 6 functions 
+(func0-func5) took up the largest part of the FUNC TIME, and focus on speeding those up. I determined how much time each function took by building the sequential version of filter with the GPROF (a 
+unix program that tracks how much time the program spends in each function) enabled. I did this with the following command line arguments:
+	First, I cleared any previous builds:
+		make clean
+	Then, I built the program with the command:
+		make seq GPROF=1
+	which produced the following executable:
+		seq
+	I ran this executable with gprof with the command:
+		gprof seq
+	Which producted the following output, or something similar:
+			Flat profile:
+		Each sample counts as 0.01 seconds.
+		  %   cumulative   self              self     total
+		 time   seconds   seconds    calls  ms/call  ms/call  name
+		 63.24      0.48     0.48       15    32.04    33.81  func1
+		 18.44      0.62     0.14  5177344     0.00     0.00  rand2
+		  3.95      0.65     0.03   491520     0.00     0.00  findIndexBin
+		  3.95      0.68     0.03        1    30.04   143.59  addSeed
+		  2.63      0.70     0.02       15     1.33     1.33  func2
+		  2.63      0.72     0.02        2    10.01    10.01  init
+		  2.63      0.74     0.02        1    20.02    20.02  imdilateDisk
+		  1.32      0.75     0.01        1    10.01   567.28  filter
+		  1.32      0.76     0.01        1    10.01   193.65  sequence
+		  0.00      0.76     0.00   983042     0.00     0.00  round
+		  0.00      0.76     0.00       16     0.00     0.00  dilateMatrix
+		  0.00      0.76     0.00       15     0.00     0.00  func3
+		  0.00      0.76     0.00       15     0.00     0.00  func4
+		  0.00      0.76     0.00       15     0.00     2.00  func5
+		  0.00      0.76     0.00       15     0.00     0.00  rand1
+		  0.00      0.76     0.00        4     0.00     0.00  get_time
+		  0.00      0.76     0.00        2     0.00     0.00  elapsed_time
+		  0.00      0.76     0.00        1     0.00     0.00  fillMatrix
+		  0.00      0.76     0.00        1     0.00     0.00  func0
+		  0.00      0.76     0.00        1     0.00     0.00  getNeighbors
+		 %         the percentage of the total running time of the
+		time       program used by this function.
+		cumulative a running sum of the number of seconds accounted
+		 seconds   for by this function and those listed above it.
+		 self      the number of seconds accounted for by this
+		seconds    function alone.  This is the major sort for this
+		           listing.
+		calls      the number of times this function was invoked, if
+		           this function is profiled, else blank.
+		 self      the average number of milliseconds spent in this
+		ms/call    function per call, if this function is profiled,
+			   else blank.
+		 total     the average number of milliseconds spent in this
+		ms/call    function and its descendents per call, if this
+			   function is profiled, else blank.
+		name       the name of the function.  This is the minor sort
+		           for this listing. The index shows the location of
+			   the function in the gprof listing. If the index is
+			   in parenthesis it shows where it would appear in
+			   the gprof listing if it were to be printed.
+	The column labels are self-explanatory. As a result, the functions that took up the largest portion of time (and as a result, would yield the largest impact on total speedup if 
+parallelized) are closer to the top. As a result, we can see that func1 is the function that impacts performance the most, and after that, func2. These are the functions that we should parallelize 
+first.
+
+	In addition, after we parallelize some functions, we can build and run the parallelized executable with gprof by using the following commands:
+		make clean
+		make omp GPROF=1
+		gprof omp
+	This gives us the same output as before, but taking into account the speedups made by using OpenMP. By parallelizing some parts of the program/unparallelizing it, we can see how much 
+speedup the parallelization gives, if any. It also allows us to choose which functions to parallelize/optimize next.
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		4) Parallel version of filter
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	I used OpenMP to parallelize some of the functions in the file func.c. First, I opened the func.c file in vim using the command:
+		vim func.c
+	And added the following include to the header (so that we could use OpenMP)
+		#include "func.h"
+		#include "util.h"
+		#include <omp.h> 	<---
+	Next, I first attempted to parallelize func1, because gprof told me that func1 took up most of the total time. I inserted the following line
+        #pragma omp parallel for private(i)
+	before the first for loop:
+		#pragma omp parallel for private(i)
+        for(i = 0; i < n; i++){
+                arrayX[i] += 1 + 5*rand2(seed, i);
+                arrayY[i] += -2 + 2*rand2(seed, i);
+        }
+	By doing this, I told the compiler to split the work of the function between multiple threads, but told each thread to have its own private i variable. I did this for the outer for loop in 
+func1 (private variables were index_X and index_Y, as well as i and j, because index_X/index_Y varies from thread to thread, and we didn't want these variables to be shared and possibly 
+overwritten):
+        #pragma omp parallel for private(index_X, index_Y, i, j)
+        for(i = 0; i<n; i++){
+                for(j = 0; j < Ones; j++){
+                        index_X = round(arrayX[i]) + objxy[j*2 + 1];
+                        index_Y = round(arrayY[i]) + objxy[j*2];
+                        index[i*Ones + j] = fabs(index_X*Y*Z + index_Y*Z + iter);
+                        if(index[i*Ones + j] >= max_size)
+                                index[i*Ones + j] = 0;
+                }
+                probability[i] = 0;
+
+                for(j = 0; j < Ones; j++) {
+                        probability[i] += (pow((array[index[i*Ones + j]] - 100),2) - pow((array[index[i*Ones + j]] - 228),2))/50.0;
+                }
+                probability[i] = probability[i]/double_Ones;
+        }
+	I repeated this process for all the loops in func0, func2, func3, func4 (placing #pragma omp parallel for private(private-variables-go-here) before every for loop). In func5, I place the 
+compiler pragma before only the first loop, because the amount of speedup gained from placing it in front of the second one was negligible. Every time I parallelized a for loop (added in another 
+pragma), I recompiled the executable and compared it with the previous, unchanged one, to see if the function sped up at all. I used the following command:
+		make clean && make omp && ./omp
+	I compared the resulting FUNC TIME's to see if the function sped up at all. If it did, I kept the pragma, and if it didn't, I removed it.
+
+	For one of the func2 for loops, instead of just having the private variable option, I also included an option called reduction. Reduction makes it so that there can be multiple accumulators 
+(one for each thread), which are combined at the end. This eliminates the race condition where multiple threads are attempting to read/write to sumWeights.
+		#pragma omp parallel for private(i) reduction(+:sumWeights)
+		for(i = 0; i < n; i++)
+				sumWeights += weights[i];
+	I did the same for the loop in func3:
+		#pragma omp parallel for private(i) reduction(+:estimate_x) reduction(+:estimate_y)
+		for(i = 0; i < n; i++){
+				estimate_x += arrayX[i] * weights[i];
+				estimate_y += arrayY[i] * weights[i];
+		}
+
+	I also performed a few smaller optimizations, such in the following line of code from inside a for loop in func1:
+		probability[i] = probability[i]/((double) Ones);
+	I made a temporary variable and declared it outside the for loop:
+		double double_Ones = (double) Ones;
+	This way, we wouldn't cast an int into a double every time we ran the for loop. I did the same for the casts in func0 and func4.
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		5) Calculating Speedup
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	We calculate the speedup of the function with the following formula:
+		S = T(old) / T(new)
+	Where T(old) is the execution time of the function without any improvements, and T(new) is the execution time of the function after the speedup. S is the speedup of the function; for 
+example, if S=3, then the changes we made would have yielded a 3x speedup.
+
+	Our T(old) was 0.5999195 seconds (I obtained this value by running the sequential executable 10 times, and taking the median of their FUNC TIME's). Our T(new) was 0.0742945 seconds (I 
+obtained this the same way as T(old), except by running the parallelized executable instead of the sequential one)
+
+	As a result, our speedup is:
+		S = T(old) / T(new)
+		S = 0.5999195 / 0.0724225 = ~8.2x speedup.
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		6) Checking for Correctness
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	I checked that our modifications to the func.c file didn't change the output by using the following command:
+		make clean
+		make check
+	Which yielded the following output:
+		cp omp filter
+		./filter
+		FUNC TIME : 0.072247
+		TOTAL TIME : 2.611521
+		diff --brief correct.txt output.txt
+	This meant that the modifications to func.c still let the filter function act the proper way and yield the correct results.
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+//		7) Checking for Memory Leaks
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	I did not check for memory leaks, because I never made calls to malloc or free. As a result, my changes to func.c should not have dynamically allocated any memory, so should not have any 
+memory leaks.

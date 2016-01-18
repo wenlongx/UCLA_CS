@@ -1,0 +1,179 @@
+<!DOCTYPE html
+	PUBLIC "-//W3C//DTD HTML 4.01//EN"
+	"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv='Content-Type' content='text/html;charset=UTF-8'>
+<title>Assignment 8. Multithreaded performance</title>
+<link rel='copyright' href='../copyright.html'>
+<link rev='made' href='mailto:eggert@cs.ucla.edu'>
+</head>
+
+<body>
+
+<h1>Assignment 8. Multithreaded performance</h1>
+
+<h2>Laboratory</h2>
+
+<p>Ordinarily when processes run in Linux, each gets its own
+virtual processor. For example, when you run the command:</p>
+
+<pre><samp>tr -cs 'A-Za-z' '[\n*]' | sort -u | comm -23 - words
+</samp></pre>
+
+<p>there are three processes, one each
+for <samp>tr</samp>, <samp>sort</samp>, and <samp>comm</samp>. Each
+process has its own virtual memory, and processes can communicate to
+each other only via system calls such
+as <samp><a href='http://opengroup.org/onlinepubs/9699919799/functions/read.html'>read</a></samp>
+and <samp><a href='http://opengroup.org/onlinepubs/9699919799/functions/pwrite.html'>write</a></samp>.</p>
+
+<p>This lab focuses on a different way to gain performance:
+multithreading. In this approach, a process can have more than one
+thread of execution. Each thread has its own instruction pointer,
+registers and stack, so that each thread can be executing a different
+function and the functions' local variables are accessed only by that
+thread. However, threads can directly access shared memory, and can
+communicate results to each other efficiently via the shared memory,
+so long as they take care not to step on each others' toes.</p>
+
+<p>Synchronization is the Achilles' heel of multithreading, in that
+it's easy to write buggy programs that have race conditions, where one
+thread is reading from an area that another thread is simultaneously
+writing to, and therefore reads inconsistent data (a polite term for
+"garbage"). This lab does not attack that problem: you will use a
+prebuilt application that should not have internal race conditions,
+and you will write an application that
+is <a href='http://en.wikipedia.org/wiki/Embarrassingly_parallel'>embarrassingly
+parallel</a>, so that there's no need for subthreads to synchronize
+with each other.</p>
+
+<h2>Lab</h2>
+
+<p>Starting
+with <a href='http://www.gnu.org/software/coreutils/'>coreutils</a>
+8.6, released 2010-10-15, GNU <samp>sort</samp> can use multiple
+threads to improve performance. This improvement to
+GNU <samp>sort</samp> was contributed by UCLA students as part of
+Computer Science 130, the undergraduate software engineering
+course. This improvement is in the current version of
+GNU <samp>sort</samp> installed
+as <samp>/usr/local/cs/bin/sort</samp> in the SEASnet GNU/Linux servers.</p>
+
+<p>Run the command <samp>sort --version</samp> to make sure you're
+using a new-enough version. Investigate how well the multithreaded
+sort works, by measuring
+its performance. First, generate a file containing
+10,000,000 random double-precision floating point numbers, in textual form,
+one per line with no white space. Do this by running the
+the <samp><a href='http://opengroup.org/onlinepubs/9699919799/utilities/od.html'>od</a></samp>
+command with standard input taken from
+<samp><a href='http://en.wikipedia.org/wiki//dev/urandom'>/dev/urandom</a></samp>,
+interpreting the bytes read from standard input as double-precision
+floating point numbers. (Almost certainly you will occasionally get
+<a href='http://en.wikipedia.org/wiki/NaN'>NaNs</a>, but that's OK;
+just leave them in there.) Process the output of <samp>od</samp> using
+standard tools such
+as <samp><a href='http://opengroup.org/onlinepubs/9699919799/utilities/sed.html'>sed</a></samp>
+and <samp><a href='http://opengroup.org/onlinepubs/9699919799/utilities/tr.html'>tr</a></samp>
+so that each floating-point number is on a separate line, without any
+white space.</p>
+
+<p>Once you have your test data, perhaps in a pipe or perhaps in a
+file,
+use <samp><a href='http://opengroup.org/onlinepubs/9699919799/utilities/time.html'>time</a>
+-p</samp> to time the command <samp>sort -g</samp> on that data, with
+the output sent
+to <samp><a href='http://en.wikipedia.org/wiki//dev/null'>/dev/null</a></samp>.
+Do not time <samp>od</samp> or any of the rest of your test harness;
+time just <samp>sort</samp> itself.</p>
+
+<p>Invoke <samp>sort</samp> with the <samp>--parallel</samp> option as
+well as the <samp>-g</samp> option, and run your benchmark with 1, 2,
+4, and 8 threads, in each case recording the real, user, and system
+time. Assuming your <samp>PATH</samp> environment variable is set
+properly so that <samp>/usr/local/cs/bin</samp> is at its start, you
+can use <samp>sort --help</samp> or <samp>info sort</samp> for details
+about how to use the <samp>--parallel</samp> option.</p>
+
+<p>Keep a log of every step you personally took during the laboratory
+to measure the speed of <samp>sort</samp>, and what the results of the
+step were. The idea behind recording your steps is that you should be
+able to reproduce your work later, if need be.</p>
+
+<h2>Homework</h2>
+
+<p>Modify the
+simple <a href='http://en.wikipedia.org/wiki/Ray_tracing_%28graphics%29'>ray
+tracer</a> code in Brian Allen's <a href='srt.tgz'>SRT
+implementation</a> so that the code is multithreaded and runs several
+times faster on a multicore machine, such as one of the SEASnet Linux
+servers.</p>
+
+<p>SRT is made of several components. You need to modify only the code
+in <samp>main.c</samp> and the <samp>Makefile</samp> in order to
+multithread it. Your implementation should
+use <a href='http://en.wikipedia.org/wiki/POSIX_Threads'>POSIX
+threads</a>, so you'll need to include <samp>&lt;pthread.h&gt;</samp>
+and link with the <samp>-lpthread</samp> library. You'll need to
+modify the <samp>main</samp> function so that it does something useful
+with the <samp>nthreads</samp> variable that it computes from the
+leading digit string in the first operand of the program; currently it
+errors out unless <samp>nthreads</samp> is 1.</p>
+
+<p>Your new code should
+invoke <samp><a href='http://opengroup.org/onlinepubs/9699919799/functions/pthread_create.html'>pthread_create</a></samp>
+and <samp><a href='http://opengroup.org/onlinepubs/9699919799/functions/pthread_join.html'>pthread_join</a></samp>
+to create your threads, and to wait for them to finish. It need not
+use any other part of the POSIX threads interface; the rest of this
+(complicated) interface is not needed for this application. It is
+OK if your new code needs to allocate some additional memory via
+<samp><a href='http://opengroup.org/onlinepubs/9699919799/functions/malloc.html'>malloc</a></samp>
+or similar primitives.</p>
+
+<p>Benchmark and test your program with the command "<samp>make clean
+check</samp>"; this command should output a
+file <samp>1-test.ppm</samp> that is byte-for-byte identical with the
+similarly-named file that is output by the unmodified SRT code, a copy
+of which is in the file <samp>baseline.ppm</samp>. This
+file is in
+standard <a href='http://netpbm.sourceforge.net/'>Netpbm</a> format
+and can be displayed as an image
+by <a href='http://www.gimp.org/'>GIMP</a> and many other graphics
+tools.</p>
+
+<h2>Submit</h2>
+
+<p>Submit the following files.</p>
+<ol>
+<li>A copy of your lab log, as a file <samp>log.txt</samp>.</li>
+<li>The output of the command <samp>make clean check</samp>, as a text
+file <samp>make-log.txt</samp>.</li>
+<li>A gzipped tar file <samp>srt.tgz</samp>, generated by <samp>make dist</samp>.</li>
+<li>A brief after-action report of your homework, as a text
+file <samp>readme.txt</samp>. This should discuss any issues that you
+ran into, and your conclusions about how well your implementation of
+SRT improves its performance.</li>
+</ol>
+
+<p>If the above files are all in the working directory, the following
+shell commands should work:</p>
+
+<pre><samp>gunzip &lt;srt.tgz | tar xf -
+(cd srt && make clean check) 2&gt;&1 | diff -u - make-log.txt
+awk '200 &lt; length' log.txt readme.txt
+</samp></pre>
+
+<p>These commands should output only minor timing differences.</p>
+
+<hr>
+<address>
+ &copy; 2010, 2014, 2015 <a href='../mail-eggert.html'>Paul Eggert</a>.
+ See <a href='../copyright.html'>copying rules</a>.<br>
+
+ $Id: assign8.html,v 1.36 2015/11/16 16:58:50 eggert Exp $
+
+</address>
+
+</body>
+</html>

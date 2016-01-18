@@ -1,0 +1,64 @@
+/////////////////////////////////////////////////////////////////////////////////////
+//	CS 33
+//	Paul Eggert
+//	4532 Boelter Hall
+//	Mon 10-11, Thurs 11-12
+//	http://cs.ucla.edu/classes/spring15/cs33
+//
+//	40%		Labs (4 labs, each 10%)
+//	5%		Homeworks (5 hw, each 1%)
+//	25%		Midterms (2 midterms, each 12.5%)
+//	30%		Final Exam
+//			Must get a passing grade in the homeworks/labs to pass the class
+//	
+//	Late credit is really generous (1 day is 1% off, 2 days is 2%, 3 is 4%, 4 is 8%)
+//	Everything is due 5 minutes before midnight on CCLE
+/////////////////////////////////////////////////////////////////////////////////////
+
+3/31/15
+	Machine Level Representation of Data (objects in memory)
+	Assembly Level Machine Organization (assembly language)
+	Interfacint and Communication
+	Functional Organization 
+	Multiprocessing and Alternative Architectures (threading/multiprocessors)
+	Performance Enhancements (making programs faster)
+	Memory Management
+	Parallelism (intro, not cover the entire thing)
+
+	Goals:	Write better software
+				avoid bugs
+				find and fix bugs more efficiently
+                performance bugs are bugs
+            Understand computer systems
+                compiler
+                operating systems
+                computer architecture
+                parallel programming
+
+    #define ADD(a,b) ((a)+(b))
+    int sum(int a, int b){
+        return ADD((a)+(b));
+    }
+    becomes:
+    int sum(int a, int b){
+        return ((a)+(b));
+    }
+    
+    gcc -E add.c
+    gcc -o2 -c sum.i
+    READ UP ON GCC COMPILER COMMANDS LATER
+
+Binary Representation
+    Simpler than base 10
+    Cheaper per bit
+    Denser representation?
+
+Bitwise Operators vs Boolean Operations
+    bitwise gives you n bits, while boolean gives you only 1 bit
+    bitwise operators (a|b, a&b, a^b, ~a)
+    boolean operators (!a, a==b, a&&b, a||b, a<b, a>b, a<=b, a>=b)
+
+bitvectors represent sets of small integers
+s&t     set intersection
+s&~t    in set s and not in t
+s-t     set difference

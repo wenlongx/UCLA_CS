@@ -1,0 +1,82 @@
+***************
+*** 155,161 ****
+  {
+    if (reason_msgid)
+      error (0, 0, _(reason_msgid), operand);
+-   error (EXIT_TROUBLE, 0, _("Try `%s --help' for more information."),
+  	 program_name);
+    abort ();
+  }
+--- 155,161 ----
+  {
+    if (reason_msgid)
+      error (0, 0, _(reason_msgid), operand);
++   error (EXIT_TROUBLE, 0, _("Try '%s --help' for more information."),
+  	 program_name);
+    abort ();
+  }
+***************
+*** 210,216 ****
+      else
+        putchar ('\n');
+    printf ("\n%s\n%s\n",
+- 	  _("If a FILE is `-', read standard input."),
+  	  _("Exit status is 0 if inputs are the same, 1 if different, 2 if trouble."));
+    emit_bug_reporting_address ();
+  }
+--- 210,216 ----
+      else
+        putchar ('\n');
+    printf ("\n%s\n%s\n",
++ 	  _("If a FILE is '-', read standard input."),
+  	  _("Exit status is 0 if inputs are the same, 1 if different, 2 if trouble."));
+    emit_bug_reporting_address ();
+  }
+***************
+*** 266,277 ****
+      {
+        error (0, werrno,
+  	     _(status == 126
+- 	       ? "subsidiary program `%s' could not be invoked"
+  	       : status == 127
+- 	       ? "subsidiary program `%s' not found"
+  	       : status == INT_MAX
+- 	       ? "subsidiary program `%s' failed"
+- 	       : "subsidiary program `%s' failed (exit status %d)"),
+  	     subsidiary_program, status);
+        exiterr ();
+      }
+--- 266,277 ----
+      {
+        error (0, werrno,
+  	     _(status == 126
++ 	       ? "subsidiary program '%s' could not be invoked"
+  	       : status == 127
++ 	       ? "subsidiary program '%s' not found"
+  	       : status == INT_MAX
++ 	       ? "subsidiary program '%s' failed"
++ 	       : "subsidiary program '%s' failed (exit status %d)"),
+  	     subsidiary_program, status);
+        exiterr ();
+      }
+***************
+*** 552,560 ****
+    if (argc - optind != 2)
+      {
+        if (argc - optind < 2)
+- 	try_help ("missing operand after `%s'", argv[argc - 1]);
+        else
+- 	try_help ("extra operand `%s'", argv[optind + 2]);
+      }
+  
+    if (! output)
+--- 552,560 ----
+    if (argc - optind != 2)
+      {
+        if (argc - optind < 2)
++ 	try_help ("missing operand after '%s'", argv[argc - 1]);
+        else
++ 	try_help ("extra operand '%s'", argv[optind + 2]);
+      }
+  
+    if (! output)

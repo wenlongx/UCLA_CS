@@ -1,0 +1,104 @@
+Wenlong Xiong
+204407085
+CS35L Section 3
+
+
+I SSH'ed into the Linux SEAS server with the following command and entered my pa
+ssword
+	ssh xiong@lnxsrv.seas.ucla.edu
+
+First I checked to see I was using the standard C locale by entering the command
+    locale
+I was not, so I input the following command
+    export LC_ALL = 'C'
+which changed my locale
+
+I figured out how to use the sort command by entering the following command
+    man sort
+and then sorted the contents of the file /usr/share/dict/words into my current d
+irectory with the command
+    sort /usr/share/dict/words > words
+
+    tr -c 'A-Za-z' '[\n*]'
+The command echoes the input file, but replaces every non alphabetical character
+ (non A-Z or a-z) with the newline character
+
+    tr -cs 'A-Za-z' '[\n*]'
+The command does the same as the previous command, but compresses multiple conse
+cutive instances of the characters listed in the last operand (\n) into a single
+ instance. Basically, this command trimes multiple consecutive newlines into a s
+ingle one.
+
+    tr -cs 'A-Za-z' '[\n*]' | sort
+The command pipes the output of tr into sort, and sorts each line by their ASCII
+ values
+
+    tr -cs 'A-Za-z' '[\n*]' | sort -u
+The command sorts each line by their ASCII values, like the previous command, bu
+t also only outputs unique values - so we have a list of unique words
+
+    tr -cs 'A-Za-z' '[\n*]' | sort -u | comm - words
+The command compares the sorted list of words with our dictionary, and outputs 3
+ columns. The first column are lines that only exist in our html file, the secon
+d column is lines that only exist in our 'words' dictionary, and the 3rd column
+consists of lines that exist in both.
+
+tr -cs 'A-Za-z' '[\n*]' | sort -u | comm -23 - words
+The command does the same as the previous one, but surpresses the 2nd and 3rd co
+lumns, so that we have a list of lines that are unique to our html file.
+
+
+Creating hwords
+
+I first pulled out all the words between the tags: <tr> <td>Eword</td> <td>Hword
+</td>, and put them in a file called hwords. I used .+ instead of .*, so that th
+e empty <td></td> tags weren't included in the search.
+    egrep '<td>.+</td>' hawaii.html
+I then translated all the uppercase letters to lowercase with tr
+    tr 'A-Z' 'a-z'
+I also converted all instances of ` into '
+    tr "\`" "\'"
+Then I deleted all the html tags
+    sed 's/<[^>]*>//g'
+After that, I deleted every other line of hwords to remove the english words
+    sed -n -e 'g;n;p'
+After the file contains only hawaiian words, I remove spaces and commas and trea
+t words separated by these characters as separate words.
+    tr " " "\n"
+    tr "," "\n"
+After that, I removed the misspelled hawaiian words. Any word that contains a no
+n-hawaiian letter is selected and deleted
+    sed "/[^pkmnwlhaeiou\']/d"
+I then sorted the dictionary
+    sort -u
+
+The resulting script for buildwords is:
+#!/bin/bash
+egrep '<td>.+<td>' $1 | tr 'A-Z' 'a-z' | tr "\`" "\'" | sed 's/<[^>]*>//g' | sed
+ -n -e 'g;n;p' | tr " " "\n" | tr "," "\n" | sed "/[^pkmnwlhaeiou\']/d" | sort -
+u | sed "1d"
+
+I then modified the shell command to spell check against the hawaiin dictionary
+instead
+    cat assign.html | tr 'A-Z' 'a-z' | tr -cs "A-Za-z\'" "[\n*]" | sort -u | com
+m -23 - hwords
+I added in \' (because ' is a hawaiian letter as well), and also another tr comm
+and to convert uppercase to lowercase (because the hawaiian dictionary only cona
+ins lowercase words). This resulted in a total of 426 misspelled Hawaiian words,
+ and 123 misspelled English words.
+
+I used the following command to save the misspelled English and Hawaiian words i
+nto files, then compare them
+    cat lab2.html | tr 'A-Z' 'a-z' | tr -cs "A-Za-z" "[\n*]" | sort -u | comm -2
+3 - words > misspelled_english
+    cat lab2.html | tr 'A-Z' 'a-z' | tr -cs "A-Za-z\'" "[\n*]" | sort -u | comm
+-23 - hwords > misspelled_hawaiian
+Then I used the following command to find which words were misspelled in Hawaiia
+n but not in English, or vice versa
+    comm misspelled_english misspelled-hawaiian
+The words in the 1st column are misspelled in only english, those in the 2nd col
+umn are misspelled in only hawaiian. There are no words that are misspelled in E
+nglish that are not also misspelled in Hawaiian ("doesn" is in the 1st column, b
+ut also does not exist in the hawaiian dictionary). However, there are words tha
+t are misspelled in Hawaiian that aren't misspelled in English, such as "work",
+or "unique".

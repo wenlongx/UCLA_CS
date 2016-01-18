@@ -1,0 +1,71 @@
+04-08-15
+conversions to shorter variables only discard top bits if unsigned
+if it's signed, its harder
+    -fwrapv     throw away top bits and keep bottom ordered bits -> assume this for the homeworks (closest to hardware)
+    -ftrapv     all discarded bits must agree with the new sign bit -> more likely to find bugs
+    default     anything goes
+
+Assembly language - 1950's all the way through 1980's
+    useful memnomics for functions
+    was the common way to write operating systems
+
+1970's UNIX was written in C
+    originally developed for PDP-11
+    could be moved to many other machines, because the source code was written in a higher level language
+Operating systems today
+    for the most part C, but a few in assembler
+
+RISC    Reduced Instruction Set Computer
+    - only had one type of "load", and you write the rest of the masks yourself
+CISC    Complex Instruction Set Computer
+    - many different types of load
+
+x86 is one of the worst and most complex architectures in general use
+
+General Registers
+    4 registers, each is 32 bits, called (eax, ebx, ecx, edx) (expended register)
+    Originally, there were only 4 16 bit registers, called (ax, bx, cx, dx register which are the bottom 16 bits of eax, etc)
+    Calling (al, bl, cl, dl) accesses the bottom 8 bits of each register and (ah, bh, ch, dh) the next 8 bits
+Indexes and Pointers
+    intent is to put pointers or indexes, which let you subscript into pieces of storage
+    4 registers, each 32 bits, called (esi, edi, ebp, esp)
+    bottom half of the 4 registers called (si, di, bp, sp)
+    source index, dest index, base pointer, stack pointer
+    Another register called eip (bottom half called ip), instruction pointer
+    Another register called eflags (bottom half called flags)
+        for example, the 1st bit in eflags tells you whether a carry occured during addition, called the carry flag
+        6th bit - zero flag
+        7th flag - sign flag
+        11th flag - overflow flag
+This is a register file - parts of the CPU?
+
+Memory is byte addressible
+Thing of memory as a bunch of words, with each address being an unsigned number
+
+The Stack - starts at the back of the memory, and increases towards the front
+    stack pointer points to the top of the stack, which is somewhere between the front and back of teh total memory
+    it points toe the very first word on the stack
+    Growing and shrinking the stack (esp -= 4 or esp += 4)
+    mem[esp -=4] =  ebp
+    ebp = mem[esp], esp += 4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

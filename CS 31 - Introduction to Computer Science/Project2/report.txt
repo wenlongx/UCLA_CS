@@ -1,0 +1,26 @@
+A.
+The biggest challenge was calculating the charge for texts past the 400th one while charging a different rate for texts between 201 and 400. I ended up using an extra if statement to find out how many texts there were, then calculated the charge for the texts beyond 400 only if there were greater than 400 texts.
+
+B.
+General Tests (every combination of situations):
+	Fewer texts and minutes than the basic plan limit, non-summer (100, 100, Jerry, 1)
+	Fewer texts and minutes than the basic plan limit, summer (100, 100, Jerry, 7)
+	Fewer texts than the basic plan limit, but minutes beyond 500, non-summer (600, 100, Jerry, 1)
+	Fewer texts than the basic plan limit, but minutes beyond 500, summer (600, 100, Jerry, 7)
+	Fewer minutes than the basic plan limit, but texts beyond 200 and less than 400, non-summer (100, 300, Jerry, 1)
+	Fewer minutes than the basic plan limit, but texts beyond 200 and less than 400, summer (100, 300, Jerry, 7)
+	Fewer minutes than the basic plan limit, but texts beyond 400, non-summer (100, 500, Jerry, 1)
+	Fewer minutes than the basic plan limit, but texts beyond 400, summer (100, 500, Jerry, 7)
+	Minutes beyond basic plan limit, texts beyond 200 and less than 400, non-summer (600, 300, Jerry, 1)
+	Minutes beyond basic plan limit, texts beyond 200 and less than 400, summer (600, 300, Jerry, 7)
+	Minutes beyond basic plan limit, texts beyond 400, non-summer (600, 600, Jerry, 1)
+	Minutes beyond basic plan limit, texts beyond 400, summer (600, 600, Jerry, 7)
+	Minutes, texts are zero, non-summer (0, 0, Jerry, 1)
+	Minutes, texts are zero, summer (0, 0, Jerry, 7)
+
+Error Cases
+	Number of minutes used is negative (-10, 10, Jerry, 1)
+	Number of texts is negative (10, -10, Jerry, 1)
+	Empty string for customer name (10, 10, , 1)
+	Month number is not a double between 1 to 12 inclusive (10, 10, Jerry, 13)
+	Multiple issues at a time, for example both minutes and texts are negative (-10, -10, Jerry, 1) -> For this one my program only prints out one error line (Whichever comes first: minutes, texts, empty string, month number), not all of them.

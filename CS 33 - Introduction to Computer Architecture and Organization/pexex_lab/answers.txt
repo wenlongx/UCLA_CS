@@ -1,0 +1,37 @@
+Wenlong Xiong
+204407085
+
+1)
+If you multiply most-positive-fixnum (0x1FFFFFFF) with itself, you should get the result 0x3FFFFFFC0000001, which truncated to 32 bits should be 0xC0000001. However, the result we obtained was 0x00000001. This is because in the data.c source code, on line 2638 there is an if statement which checks for integer overflow. The first trace does not overflow, so the body of the if statement is not called in Trace 1. However, in Trace 3, multiplication yields a number greater than 32 bits, so the body of the if statement is executed.
+In the body of the if statement, the following assembly commands are performed:
+	0x08120aab<arith_driver+395>data.c:2640	imul %ecx,%esi	esi=0xc0000001
+	0x08120ab1<arith_driver+401>data.c:2642	and $0x3fffffff,%esi	esi=0x00000001
+which corresponds to the data.c source code lines:
+	2640               EMACS_UINT a = accum, b = next, ab = a * b;
+	2642               accum = ab & INTMASK;
+What this does is it takes the two numbers to be multiplied (most-positive-fixnum), multiplies them together (<arith_driver+395>). The actual product we get from <arith_driver+395> is 0xC0000001, which is the 32 bit truncated result of the multiplication. However, we truncate this result again, because in Emacs Lisp, integers are only 30 bits long. To truncate, we 'and' the product with a mask of the least significant 30 bits (INTMASK, or x3FFFFFFF). This corresponds to <arith_driver+401>. The result of this 'and' is 0x00000001. As a result, the answer for Trace 3 is wrong because of truncation.
+
+2)
+In assembly, the instructions that are the most inefficient/costly are multiplies, divides, shifts, jumps, conditional moves, and memory accesses. Trace 1 has 101 total instructions, of which there are 2 multiplies, 2 divides, 2 shifts, 13 jumps, and 15 memory (stack) accesses. Trace 2 has 107 total instructions, of which there are 2 multiplies, 2 divides, 2 shifts, 2 conditional moves, 12 jumps, and 14 memory (stack) accesses. As a result, Trace 1 is more efficient (it has fewer total instructions, no conditional moves, and almost the same amount of jumps and memory accesses).
+
+3)
+Trace 2 is less efficient, because it has more total instructions as well as conditional moves, which are very costly.
+
+4)
+The number 536870911 is (2^29 - 1), which is the largest integer in Emacs Lisp (integers are 30 bits long). The remaining 2 bits are type tags (descriptors) - flags used by the Lisp interpreter to determine the data type of the number dynamically.
+
+5)
+If the emacs executables were compiled using both the -O2 and -ftrapv option, the -O2 (second level optimization) would optimize out the -ftrapv. As a result, if an integer overflow occured, the overflow would wrap around based on two's complement arithmetic. This means that Trace 1 and 2 would yield the same result as before (the correct product). However, this means that Trace 3 would have run into problems - multiplying most-positive-fixnum with itself will result in an integer overflow and cause the program to abort.
+
+If the emacs executables were compiled using only the -ftrapv option and not the -O2 optimization, integer overflows would result in a program crash. As a result, Trace 1 and Trace 2 would yield the same result as before, because multiplication of 37 and -26 would not result in integer overflows. However, in Trace 3, multiplying most-positive-fixnum with itself will result in an integer overflow. The product will wrap around based on two's complement arithmetic, and Trace 3 will produce the wrong answer (some integer smaller than most-positive-fixnum).
+
+6)
+If the emacs executables were compiled using the -fwrapv option, integer overflow would wrap around based on two's complement arithmetic. This would not affect the result of Trace 1 or Trace 2, because there is no integer overflow. However, Trace 3 would product the incorrect result, because multiplying most-positive-fixnum with itself causes integer overflow. The product will wrap around based on two's complement arithmetic, and Trace 3 will produce the wrong answer (some integer smaller than most-positive-fixnum).
+
+Emacs executables compiled with both -O2 and -fwrapv options behave the same way as those without optimizations, because -O2 assumes integer overflow will not occur, and that two's complement arithmetic holds true. However, two's complement arithmetic is the same as -fwrapv semantics, so the optimized and non-optimized programs behave the same way
+
+7)
+In line 2638 of the source file data.c, there is a check for integer overflow (INT_MULTIPLY_OVERFLOW), and if there is an integer overflow, wraps the result. However, if the emacs executable is compiled using -fwrapv, the integer overflow will wrap anyways, so this if statement can be removed.
+
+8)
+Because only one if statement is affected (two jumps, one for each argument), the efficiency does not increase by very much. The efficiency increase is not significant at all.

@@ -1,0 +1,10 @@
+04-09-15
+Unary operators
+unary arithmetic
+    D   D++
+    D   D--
+    D   D= -D
+unary logical
+    D   D= ~D
+
+

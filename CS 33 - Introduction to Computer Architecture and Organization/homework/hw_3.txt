@@ -1,0 +1,39 @@
+Homework 3
+Wenlong Xiong
+204407085
+
+3.64
+A)
+Three values are being retrieved from the stack, because the single argument is a struct with 2 fields, and the return value is a struct. As a result, two of the values being retrieved are the argument struct's fields (a and p), and the third value is a pointer (memory address) to the start of the struct return value.
+B)
+The fields are at
+-4(%ebp)
+    holds the value of the diff field of struct s2
+-8(%ebp)
+    holds the value of the sum field of struct s2
+-12(%ebp)
+    holds a pointer to an int (int *p) of struct s1, that is passed into word_sum
+-16(%ebp)
+    stores the value of int a of struct s1 (the struct that is passed into word_sum)
+-20(%ebp)
+    holds a pointer to -8(%ebp), or the address of struct s2 (returned in word_sum)
+C)
+When you pass structures as argument, you pass in the struct's fields as individual arguments. You treat a single struct argument as if you were passing in an argument for each of its fields.
+D)
+When a structure is a return value from a function, you pass in a pointer (memory address) to the return struct, and you define the values of the fields of the struct before you return.
+
+
+
+3.67
+A)
+e1.p: 0 bytes
+e1.y: +4 bytes
+e2.x: 0 bytes
+e2.next: +4 bytes
+B)
+The structure would require 8 bytes
+C)
+void prof (union ele *up)
+{
+    up->e2.next->e1.y = *(up->e2.next->e1.p) - up->e2.x;
+}

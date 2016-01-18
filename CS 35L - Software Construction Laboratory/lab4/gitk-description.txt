@@ -1,0 +1,16 @@
+Wenlong Xiong
+204407085
+Lab 4
+
+The top left window is a visual of the commit tree - with each branch and 
+commits labeled. Top middle window shows who submitted the commit, and the top 
+right window shows the timestamp at which the commit was submitted. In the 
+middle, there is a search bar, which lets you search the commit for a specific 
+string. In the bottom right, there is an option to show "patch" or "tree". 
+"patch" shows you the all the files that were modified in the commit, and 
+selecting one of them from the "patch" window shows the diff (patch) file in 
+the bottom left window. You also have the option to select "Comments", which 
+shows the header for the diff file. "tree" lets you see all the files in the 
+git repository, and lets you select any one of them to view (even if the file 
+was not modified in the commit). Selecting one of the files causes the source 
+code to display in the bottom left window.

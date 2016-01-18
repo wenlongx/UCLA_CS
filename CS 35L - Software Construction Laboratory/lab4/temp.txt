@@ -1,0 +1,59 @@
+Wenlong Xiong
+204407085
+Lab 4
+Partner: Michael Xiong 404463570
+
+
+I used the command
+    git checkout -b quote
+    patch -p1 < quote-3.0-patch.txt
+to patch the v3.0 version of diff. I then opened all 6 modified files in emacs, 
+and wrote a Changelog message for each of them:
+    emacs FILENAME
+    C-x 4 a
+    (typed in changelog message)
+    C-x C-c
+This resulted in a file called ChangeLog in the directory src/. I then 
+committed the changes:
+    git add .
+    git commit -a -F src/ChangeLog
+I then used the following command to find the commit hash:
+    git log
+And the following command to create the file formatted-patch.txt:
+    git format-patch -1 <sha> > formatted-patch.txt
+where <sha> is the commit hash. I then sent the file to my partner Michael 
+Xiong (minghai@lnxsrv.seas.ucla.edu)
+    scp xiong@lnxsrv.seas.ucla.edu:~/formatted-patch.txt 
+minghai@lnxsrv.seas.ucla.edu:~/lab4
+And he sent his over as well. I then applied the patch using the command:
+    git am formatted-patch.txt
+And I got the following message:
+    Applying: 2015-10-24 Michael Minghai Xiong <minghai@lnxsrv05.seas.ucla.edu>
+I then built the resulting files
+    ./bootstrap
+    ./configure
+    make
+    make distdir
+And I found the entry in the diffutils-3.0.2-3b86c/ChangeLog
+    2015-10-24  Michael Minghai Xiong  <minghai@lnxsrv05.seas.ucla.edu>
+
+        2015-10-24 Michael Minghai Xiong <minghai@lnxsrv05.seas.ucla.edu>
+                * src/util.c: Changed "`" into "'" in all string constants.
+
+                * src/sdiff.c: Changed "`" into "'" in all string constants.
+
+                * src/dir.c: Changed "`" into "'" in all string constants.
+
+                * src/diff3.c: Changed "`" into "'" in all string constants.
+
+                * src/diff.c: Changed "`" into "'" in all string constants.
+
+                * src/cmp.c: Changed "`" into "'" in all string constants.
+
+    2015-10-24  Wenlong Xiong  <xiong@lnxsrv04.seas.ucla.edu>
+
+        Revert "version 3.0"
+        This reverts commit 022cd5c5eb647a22a4daa5fe5cbc10af6d5a1112.
+    ....
+    etc
+

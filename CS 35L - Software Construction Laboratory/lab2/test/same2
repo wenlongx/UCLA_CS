@@ -1,0 +1,42 @@
+#!/bin/bash
+
+dir=$1
+RESULT=`ls -a $dir`
+declare -a ARRAY #"man declare" -a option declares an array
+let count=0
+for FILE in $RESULT
+do
+    if [ ! -L "$dir/$FILE" ]
+    then
+        if [ -f "$dir/$FILE" ]
+        then
+            echo "$dir/$FILE is a regular file."
+            ARRAY[$count]="$dir/$FILE"
+            let count=count+1
+        else
+            echo "$dir/$FILE is NOT a regular file."
+        fi
+    fi
+done
+echo "There are $count regular files."
+
+index=0
+while [ $index -lt $count ]
+do
+    FILE=${ARRAY[$index]}
+    echo $FILE
+    let index2=$index+1
+    while [ $index2 -lt $count ]
+    do
+        FILE2=${ARRAY[$index2]}
+        cmp $FILE $FILE2
+        if [ $? -eq 0 ]
+        then
+            rm $FILE2
+            ln $FILE $FILE2
+        fi
+        
+        let index2=$index2+1
+    done
+    let index=$index+1
+done

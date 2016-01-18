@@ -1,0 +1,17 @@
+***************
+*** 154,160 ****
+  	r = strcoll (name1, name2);
+        if (errno)
+  	{
+- 	  error (0, errno, _("cannot compare file names `%s' and `%s'"),
+  		 name1, name2);
+  	  longjmp (failed_locale_specific_sorting, 1);
+  	}
+--- 154,160 ----
+  	r = strcoll (name1, name2);
+        if (errno)
+  	{
++ 	  error (0, errno, _("cannot compare file names '%s' and '%s'"),
+  		 name1, name2);
+  	  longjmp (failed_locale_specific_sorting, 1);
+  	}

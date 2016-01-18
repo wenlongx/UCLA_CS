@@ -1,0 +1,191 @@
+<!DOCTYPE html
+	PUBLIC "-//W3C//DTD HTML 4.01//EN"
+	"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv='Content-Type' content='text/html;charset=UTF-8'>
+<title>Assignment 9. Dynamic linking</title>
+</head>
+
+<body>
+
+<h1>Assignment 9. Dynamic linking</h1>
+
+<h2>Useful pointers</h2>
+
+<ul>
+  <li>M. Tim
+    Jones, <a href='http://www.ibm.com/developerworks/library/l-dynamic-libraries/'>Anatomy
+      of Linux dynamic libraries</a>. IBM developerWorks (2008).</li>
+  <li>David A. Wheeler, <a href='http://tldp.org/HOWTO/Program-Library-HOWTO/index.html'>Program Library HOWTO</a> 1.20 (2003).</li>
+  <li><a href='http://man7.org/linux/man-pages/man7/vdso.7.html'>vDSO &ndash; overview of the virtual ELF dynamic shared object</a> (2014).</li>
+  <li><a href='https://sourceware.org/libffi/'>libffi &ndash; A Portable Foreign Function Interface Library</a> (2014).</li>
+</ul>
+
+<h2>Laboratory: Who's linked to what?</h2>
+
+<p>As usual, keep a log in the file <code>lab.txt</code> of what you
+do in the lab so that you can reproduce the results later. This should
+not merely be a transcript of what you typed: it should be more like a
+true lab notebook, in which you briefly note down what you did and
+what happened.</p>
+
+<p>For this laboratory, you will find out about which programs are
+  linked to which libraries.</p>
+
+<ol>
+  <li>Compile, build and run a trivial <a href='http://en.wikipedia.org/wiki/%22Hello,_World!%22_program'>"Hello, World!" program</a> in C on the SEASnet GNU/Linux servers.</li>
+  <li>Use the <code>ldd</code> command to see which dynamic libraries
+    your trivial program uses.</li>
+  <li>Use the <code>strace</code> command to see which system calls
+    your trivial program makes. Which of these calls are related
+    to dynamic linking and what is the relationship?</li>
+  <li>Suppose your student ID is the 9-digit number
+    <code><var>nnnnnnnnn</var></code>.
+    On a SEASnet GNU/Linux server, run the shell command
+    &ldquo;<code>ls /usr/bin | awk 'NR%101==<var>nnnnnnnnn</var>%101'</code>&rdquo;
+    to get a list of two dozen or so commands to investigate.</li>
+  <li> Invoke <code>ldd</code> on each command in your list.
+    If there are error messages, investigate why they're occurring.</li>
+  <li> Get a sorted list of every dynamic library that is used by any of
+    the commands on your list (omitting duplicates from your list).</li>
+</ol>
+
+<h2>Homework: Split an application into dynamically linked modules</h2>
+
+<p>In this homework you will divide a small example application into
+  dynamically linked modules and a main program, so that the resulting
+  executable does not need to load code that it doesn't need. Although
+  this is just a toy example which would probably not be
+  worth optimizing in this way, in real life many applications use
+  dynamic linking to improve performance in common cases, and the skills
+  used in this small exercise can be helpful in larger programs.</p>
+
+<p>The <a href='dlskeleton.tgz'>skeleton tarball</a> contains the following:</p>
+
+<ul>
+  <li>A file <code>randall.c</code> that is a single main program,
+    which you are going to split apart.</li>
+  <li>A <code>Makefile</code> that builds the program
+    <code>randall</code>.</li>
+  <li>Two files <code>randcpuid.h</code> and <code>randlib.h</code>
+    that specify two interfaces for libraries that you need to implement
+    when you split <code>randall.c</code> apart.
+</ul>
+
+<p>First, read and understand the code in <code>randall.c</code>.
+Do not modify it, or any of the other files in the skeleton tarball.</p>
+
+<p>Second, split the <code>randall</code> implementation by copying
+  its source code into the following modules, which you will need to
+  modify to get everything to work:</p>
+
+<ol>
+  <li> <code>randcpuid.c</code> should contain the code that
+    determines whether the current CPU has
+    the <a href='http://en.wikipedia.org/wiki/RdRand'>RDRAND</a>
+    instruction. It should start by including <code>randcpuid.h</code>
+    and should implement the interface described
+    by <code>randcpuid.h</code>.</li>
+  <li><code>randlibhw.c</code> should contain the hardware implementation
+    of the random number generator. It should start
+    by including <code>randlib.h</code> and should implement the
+    interface described by <code>randlib.h</code>.</li>
+  <li><code>randlibsw.c</code> should contain the software
+    implementation of the random number
+    generator. Like <code>randlibhw.c</code>, it should start by
+    including <code>randlib.h</code> and should implement the
+    interface described by <code>randlib.h</code>. Since the software
+    implementation needs initialization and finalization, this
+    implementation should also define an initializer and a finalizer
+    function, using
+    GCC's &ldquo;<a href='http://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-g_t_0040code_007bconstructor_007d-function-attribute-3074'><code>__attribute__
+    ((constructor))</code></a>&rdquo; and &ldquo;<code>__attribute__
+    ((destructor))</code>&rdquo; declaration specifiers. </li>
+  <li><code>randmain.c</code> should contain the main program that
+    glues together everything else. It should include
+    <code>randcpuid.h</code> (as the corresponding module
+    should be linked statically) but
+    not <code>randlib.h</code> (as the corresponding
+    module should be linked after <code>main</code> starts up).
+    Depending on whether <code>randcpuid</code> reports that the
+    hardware supports the RDRAND instruction, this main program
+    should dynamically
+    link the hardware-oriented or software-oriented implementation
+    of <code>randlib</code>,
+    doing the dynamic linking
+    via <code><a href='http://pubs.opengroup.org/onlinepubs/9699919799/functions/dlopen.html'>dlopen</a></code>
+    and <code><a href='http://pubs.opengroup.org/onlinepubs/9699919799/functions/dlsym.html'>dlsym</a></code>. Also,
+    the main program should
+    call <code><a href='http://pubs.opengroup.org/onlinepubs/9699919799/functions/dlclose.html'>dlclose</a></code>
+    to clean up before exiting. Like <code>randall</code>, if
+    any function called by the main program fails, the main program
+    should report an error and exit with nonzero status.</li>
+</ol>
+
+<p>Each module should include the minimal number of
+include files; for example, since <code>randcpuid.c</code> doesn't
+need to do I/O, it shouldn't include <code>stdio.h</code>. Also, each
+module should keep as many symbols private as it can; for example,
+since <code>randcpuid</code> does not need to export
+the <code>cpuid</code> function, that function should
+be <code>static</code> and not <code>extern</code>.</p>
+
+<p>Next, write a makefile include file <code>randmain.mk</code> that
+  builds the program <code>randmain</code> using three types of
+  linking. First, it should use static linking to
+  combine <code>randmain.o</code> and <code>randcpuid.o</code> into a
+  single program executable <code>randmain</code>. Second, it should
+  use dynamic linking as usual to link the C library and any other
+  necessary system-supplied files before its <code>main</code>
+  function is called. Third, after <code>main</code> is called, it
+  should use dynamic linking via <code>dlsym</code> as described
+  above. <code>randmain.mk</code> should link <code>randmain</code>
+  with the options &ldquo;<code>-ldl -Wl,-rpath=$PWD</code>&rdquo;. It should
+  compile <code>randlibhw.c</code> and <code>randlibsw.c</code> with
+  the <code>-fPIC</code> options as well as the other GCC options
+  already used. And it should build shared object
+  files <code>randlibhw.so</code> and <code>randlibsw.so</code> by
+  linking the corresponding object modules with
+  the <code>-shared</code> option, e.g., &ldquo;<code>gcc ... -shared
+  randlibsw.o -o randlibsw.so</code>&rdquo;.</p>
+
+<p>The supplied <code>Makefile</code>
+  includes <code>randmain.mk</code>, so you
+  should be able to type just <code>make</code> to build all four
+files: <code>randall</code>, <code>randmain</code>, <code>randlibhw.so</code>,
+  and <code>randlibsw.so</code>. If <code>randmain</code> needs to
+  generate any random numbers, it loads
+  either <code>randlibhw.so</code> or <code>randlibsw.so</code> (but
+  not both) to do its work. You can verify this by using &ldquo;<code>strace
+  ./randmain</code>&rdquo; or by using a debugger.</p>
+
+<h2>Submit</h2>
+
+<p>Submit the file <code>dlsubmission.tgz</code>, which you can
+  build by running the command <samp>make submission</samp>.</p>
+
+<p>All files should be ASCII text files, with no
+carriage returns, and with no more than 132 columns per line.
+The shell
+command</p>
+
+<pre><code>expand lab.txt randmain.mk \
+  randcpuid.c randlibhw.c randlibsw.c randmain.c |
+  awk '/\r/ || 200 &lt; length'
+</code></pre>
+
+<p>should output nothing.</p>
+
+
+<hr>
+<address>
+ &copy; 2015 <a href='../mail-eggert.html'>Paul Eggert</a>.
+ See <a href='../copyright.html'>copying rules</a>.<br>
+
+ $Id: assign9.html,v 1.25 2015/05/26 05:57:49 eggert Exp $
+
+</address>
+
+</body>
+</html>

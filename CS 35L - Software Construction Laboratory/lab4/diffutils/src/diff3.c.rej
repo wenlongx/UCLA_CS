@@ -1,0 +1,17 @@
+***************
+*** 434,440 ****
+    "",
+    N_("-m  --merge  Output merged file instead of ed script (default -A)."),
+    N_("-L LABEL  --label=LABEL  Use LABEL instead of file name."),
+-   N_("-i  Append 'w' and 'q' commands to ed scripts."),
+    N_("-a  --text  Treat all files as text."),
+    N_("--strip-trailing-cr  Strip trailing carriage return on input."),
+    N_("-T  --initial-tab  Make tabs line up by prepending a tab."),
+--- 434,440 ----
+    "",
+    N_("-m  --merge  Output merged file instead of ed script (default -A)."),
+    N_("-L LABEL  --label=LABEL  Use LABEL instead of file name."),
++   N_("-i  Append `w' and `q' commands to ed scripts."),
+    N_("-a  --text  Treat all files as text."),
+    N_("--strip-trailing-cr  Strip trailing carriage return on input."),
+    N_("-T  --initial-tab  Make tabs line up by prepending a tab."),

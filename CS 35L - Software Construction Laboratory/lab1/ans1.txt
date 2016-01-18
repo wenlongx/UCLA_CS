@@ -1,0 +1,154 @@
+Wenlong Xiong
+204407085
+
+1)
+man -K "word"
+	will print all commands that have the "word" in their description or 
+specification
+man man
+	will print out a description of the man options and what they do
+
+2)
+cp is located in /usr/bin/cp
+wc is located in /usr/bin/cp
+
+whereis cp
+	will print out the directories in which cp is located
+whereis wc
+	will print out the directories in which wc is located
+
+3)
+/usr/bin/X
+	the system graphics server - distributes user input and accepts output 
+requests from client programs
+/usr/bin/w
+	displays information about the current users on the machine, and their 
+running processes
+/usr/bin/[
+	used to evaluate conditional expressions
+
+find /usr/bin -executable -name '?'
+	will print out all the executable programs that are one character long 
+in /usr/bin
+whatis word
+	will tell you what "word" does
+help [
+	will tell you what the executable [ does
+
+4)
+/usr/bin/gcc
+	is the program that is executed when the symbolic link is followed
+
+ls -l /usr/bin | grep cc
+	will show you where the symbolic link /usr/bin/cc points
+
+5)
+chmod g-s
+	the 'g' means that all users that are members of the file group will be 
+affected by the change
+	the '-s' means that the user/group ID is not set upon execution
+
+man chmod
+	tells you what the chmod options do
+
+6)
+-mtime 3
+	the option lets you find files that were modified 3 days ago
+
+man find
+	tells you what the find options do
+
+7)
+find / -type d -mtime 3
+	lets you find all the directories that were modified in the last 3 days
+
+man find
+	tells you what the find options do
+
+8)
+231 symbolic links in the directory /usr/bin
+
+whereis find
+	tells you the directory in which find is
+find /usr/bin -type l | wc -l
+	lists all the symbolic links in separate lines, then counts them
+
+9)
+libresolv-2.17.so
+	is the oldest file
+
+ls -lt --group-directories-first /usr/lib
+	the last line will be the oldest file
+
+10)
+LANG
+LC_*
+NLSPATH
+	environment variables are where the program locale gets its data
+
+man locale
+	describles locale
+
+11)
+Buffer-menu-sort
+sort-columns
+sort-fields
+sort-lines
+sort-numberic-fields
+sort-pages
+sort-paragraphs
+sort-regexp-fields
+tabulated-list-col-sort
+tabulated-list-sort
+	are all the emacs commands that contain "sort"
+
+C-h sort
+	command within emacs that finds all commands that contain "sort"
+
+12)
+C-a: go to line end
+C-b: go back one character
+C-c: prefixes many emacs commands, changes mode
+C-d: deletes a character in the forward direction
+C-e: go to line end
+C-f: go forward one character
+C-g: quits current command (including partially entered commands)
+C-h: help
+C-i: inserts a tab
+C-j: return, and indent (if needed)
+C-k: kill line (until end)
+C-l: redraw screen
+C-m: return
+C-n: moves one line down
+C-o: insert new line after point
+C-p: moves one line up
+C-q: inserts a non-graphic character
+C-r: search backwards
+C-s: search forwards
+C-t: transposes two characters
+C-u: prints a character multiple times
+C-v: scroll to next screen
+C-w: kill region
+C-x: prefix for many emacs commands
+C-y: yank back the last thing killed
+C-z: suspend emacs
+
+C-h f "string"
+    emacs command, used to find what each of the C-a to C-z do
+you can also find commands in the emacs cheatsheet
+
+13)
+C-g quits the currently running command, or gets rid of a partially typed 
+command. It does this by setting the quit-flag to t, and waits for emacs to 
+check the quit-flag
+
+you can find the commands in the emacs cheat sheet
+
+14)
+yank: pastes/reinserts the last killed portion of text
+
+C-h f "string
+    emacs command, used to find what commands do
+
+15)
+The command dired in emacs will show hidden files, while ls -l will not.

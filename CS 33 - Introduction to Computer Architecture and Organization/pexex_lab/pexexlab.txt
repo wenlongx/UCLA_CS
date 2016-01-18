@@ -1,0 +1,49 @@
+Wenlong Xiong
+204407085
+
+Traces
+	First, I logged onto the linux server by typing the following command into the shell, and entering my password:
+		ssh xiont@lnxsrv.seas.ucla.edu
+	To run the first trace, I typed the following into the shell:
+		gdb --args ~eggert/bin32/bin/emacs-24.5 -batch -eval '(print (* 37 -26))'
+	To run the second trace, I typed the following into the shell:
+		gdb --args ~eggert/bin64/bin/emacs-24.5 -batch -eval '(print (* 37 -26))'
+	To run the third trace, I typed the following into the shell:
+		gdb --args ~eggert/bin32/bin/emacs-24.5 -batch -eval '(print (* most-positive-fixnum most-positive-fixnum))'
+	Once GDB had started running, I entered in the following commands to show the assembly code, to start showing assembly code starting at the function Ftimes, and to begin running the program.
+		set disassemble-next-line on
+		break Ftimes
+		run
+	Once the program is running, it stops at the beginning of the function Ftimes. I used the following command:
+		si
+	to go to the next line of the assembly program. I also used the following command:
+		info registers
+	to display the value inside the registers before the current command is executed. Using these two commands, I went through every line of assembly code in the function Ftimes and the function arith_driver. Once I exited these two functions, I used the command:
+		continue
+	to skip to the end of the program and to see the output.
+	I copied and pasted every line of the assembly that was run into a document called trace1.tr, trace2.tr, trace3.tr etc. I used the 'info registers' command to figure out what each line of assembly did, and if the value of any registers were changed, I recorded it down. Also, if anything was stored in memory, I also recorded that. I didn't record the changes to the instruction pointer register, however.
+
+Test Overflow
+	In shell, I first created a file called test.c by using the following command:
+		vim test.c
+	This file held the following source code:
+		#include <limits.h>
+		int big = INT_MAX;
+		int
+		testovf (void)
+		{
+			return big + 1 < big;
+		}
+	I typed the following into shell to compile the C file into an assembly (.s) file based on second level optimization and ftrapv and fwrapv semantics, based on the x86 architecture:
+		gcc -O2 -m32 -S test.c
+		gcc -O2 -ftrapv -m32 -S test.c
+		gcc -O2 -fwrapv -m32 -S test.c
+	I then copied the assembly code for the testovf function into my testovf.txt file. I also compiled the C file into assembly files based on ftrapv and fwrapv without optimizations, just for reference:
+		gcc -ftrapv -m32 -S test.c
+		gcc -fwrapv -m32 -S test.c
+	I looked at the assembly code by typing the following into shell:
+		vim test.s
+	By looking at the differences in assembly code, we could discover how optimization affects ftrapv and fwrapv semantics.
+
+Answers to Questions
+	If I ran into anything I didn't understand, I either consulted my notes from class or looked it up online. I also traced through the assembly code and tried to understand it as much as possible

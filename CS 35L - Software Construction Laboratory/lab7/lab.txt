@@ -1,0 +1,49 @@
+Wenlong Xiong
+UID: 204407085
+
+Lab Section ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+First, I ssh'ed into the linux server with the following commands:
+    ssh xiong@lnxsrv.seas.ucla.edu
+First, I wrote the code for tr2u.c and tr2b.c. I then compiled the code and made it executable with the following commands:
+    gcc tr2u.c
+    mv a.out tr2u
+    chmod +x tr2u
+    gcc tr2b.c
+    mv a.out tr2b
+    chmod +x tr2b
+I created a file that contained more than 5 million bytes by performing the following command repeatedly - words is the hawaiian dictionary we 
+created in a previous lab:
+    cat words > temp && cat temp >> words
+I checked the size of words with the following command:
+    wc -c words
+Afterwards, I tested the two files with the words file.
+    ./tr2u 'a' 'A' < words > temp1
+    ./tr2b 'a' 'A' < words > temp2
+    comm -3 temp1 temp2
+This ensured that the two commands resulted in the same output. I also used the command strace to check what system calls were made by both programs 
+when copying files to another file.
+    strace -o strace_output_tr2u ./tr2u 'a' 'A' < words > temp1
+    strace -o strace_output_tr2b ./tr2b 'a' 'A' < words > temp2
+In the strace_output_tr2u file, after the first 20 or so lines, there are repeating calls to read() and write() for more than 16 million lines, and 
+in each one, one character is read/written. In the strace_output_tr2b, there are only about 300 lines. Starting from line 29 onwards, there are 
+repeating calls to read and write, but there are only about 200 of these calls. This is a large decrease in system calls compared to 
+strace_output_tr2u. I then copied files to my terminal with the following commands, and ran strace on them:
+    strace -o strace_output_tr2u_term ./tr2u 'a' 'A' < words
+    strace -o strace_output_tr2b_term ./tr2b 'a' 'A' < words
+In the strace_output_tr2u_term file, again, after the first 20 lines or so there are repeating calls to read() and write() for over 6 million lines. 
+In strace_output_tr2b, there are also repeated write()s. However, these only go on for about 1 million lines, and in each write, instead of 
+outputting a single character at a time, a word is outputted at each time.
+After that, I timed the output so that I could see how long one command took compared to the other. I used the following commands:
+    time ./tr2u 'a' 'A' < words > temp.txt
+    time ./tr2b 'a' 'A' < words > temp.txt
+The programs took the following amounts of time:
+    tr2u:
+	real	0m5.549s
+	user	0m0.280s
+	sys	0m5.197s
+    tr2b:
+	real	0m0.215s
+	user	0m0.125s
+	sys	0m0.009s
+As a result, the tr2b program is faster than the tr2u by a lot.
+

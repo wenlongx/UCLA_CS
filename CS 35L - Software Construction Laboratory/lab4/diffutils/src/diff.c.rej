@@ -1,0 +1,119 @@
+***************
+*** 44,49 ****
+  #include <stat-time.h>
+  #include <timespec.h>
+  #include <version-etc.h>
+    proper_name ("Paul Eggert"), \
+    proper_name ("Mike Haertel"), \
+    proper_name ("David Hayes"), \
+--- 37,49 ----
+  #include <stat-time.h>
+  #include <timespec.h>
+  #include <version-etc.h>
++ #include <xalloc.h>
++ #include <xfreopen.h>
++ 
++ /* The official name of this program (e.g., no `g' prefix).  */
++ #define PROGRAM_NAME "diff"
++ 
++ #define AUTHORS \
+    proper_name ("Paul Eggert"), \
+    proper_name ("Mike Haertel"), \
+    proper_name ("David Hayes"), \
+***************
+*** 330,336 ****
+  	      {
+  		numval = strtoumax (optarg, &numend, 10);
+  		if (*numend)
+- 		  try_help ("invalid context length '%s'", optarg);
+  		if (LIN_MAX < numval)
+  		  numval = LIN_MAX;
+  	      }
+--- 330,336 ----
+  	      {
+  		numval = strtoumax (optarg, &numend, 10);
+  		if (*numend)
++ 		  try_help ("invalid context length `%s'", optarg);
+  		if (LIN_MAX < numval)
+  		  numval = LIN_MAX;
+  	      }
+***************
+*** 599,605 ****
+  	case TABSIZE_OPTION:
+  	  numval = strtoumax (optarg, &numend, 10);
+  	  if (! (0 < numval && numval <= SIZE_MAX) || *numend)
+- 	    try_help ("invalid tabsize '%s'", optarg);
+  	  if (tabsize != numval)
+  	    {
+  	      if (tabsize)
+--- 599,605 ----
+  	case TABSIZE_OPTION:
+  	  numval = strtoumax (optarg, &numend, 10);
+  	  if (! (0 < numval && numval <= SIZE_MAX) || *numend)
++ 	    try_help ("invalid tabsize `%s'", optarg);
+  	  if (tabsize != numval)
+  	    {
+  	      if (tabsize)
+***************
+*** 893,903 ****
+    -W NUM  --width=NUM  Output at most NUM (default 130) print columns.\n\
+    --left-column  Output only the left column of common lines.\n\
+    --suppress-common-lines  Do not output common lines."),
+-   N_("-D NAME  --ifdef=NAME  Output merged file to show '#ifdef NAME' diffs."),
+    N_("--GTYPE-group-format=GFMT  Similar, but format GTYPE input groups with GFMT."),
+    N_("--line-format=LFMT  Similar, but format all input lines with LFMT."),
+    N_("--LTYPE-line-format=LFMT  Similar, but format LTYPE input lines with LFMT."),
+-   N_("  LTYPE is 'old', 'new', or 'unchanged'.  GTYPE is LTYPE or 'changed'."),
+    N_("  GFMT may contain:\n\
+      %<  lines from FILE1\n\
+      %>  lines from FILE2\n\
+--- 893,903 ----
+    -W NUM  --width=NUM  Output at most NUM (default 130) print columns.\n\
+    --left-column  Output only the left column of common lines.\n\
+    --suppress-common-lines  Do not output common lines."),
++   N_("-D NAME  --ifdef=NAME  Output merged file to show `#ifdef NAME' diffs."),
+    N_("--GTYPE-group-format=GFMT  Similar, but format GTYPE input groups with GFMT."),
+    N_("--line-format=LFMT  Similar, but format all input lines with LFMT."),
+    N_("--LTYPE-line-format=LFMT  Similar, but format LTYPE input lines with LFMT."),
++   N_("  LTYPE is `old', `new', or `unchanged'.  GTYPE is LTYPE or `changed'."),
+    N_("  GFMT may contain:\n\
+      %<  lines from FILE1\n\
+      %>  lines from FILE2\n\
+***************
+*** 918,924 ****
+      %c'C'  the single character C\n\
+      %c'\\OOO'  the character with octal code OOO"),
+    "",
+-   N_("-l  --paginate  Pass the output through 'pr' to paginate it."),
+    N_("-t  --expand-tabs  Expand tabs to spaces in output."),
+    N_("-T  --initial-tab  Make tabs line up by prepending a tab."),
+    N_("--tabsize=NUM  Tab stops are every NUM (default 8) print columns."),
+--- 918,924 ----
+      %c'C'  the single character C\n\
+      %c'\\OOO'  the character with octal code OOO"),
+    "",
++   N_("-l  --paginate  Pass the output through `pr' to paginate it."),
+    N_("-t  --expand-tabs  Expand tabs to spaces in output."),
+    N_("-T  --initial-tab  Make tabs line up by prepending a tab."),
+    N_("--tabsize=NUM  Tab stops are every NUM (default 8) print columns."),
+***************
+*** 941,949 ****
+    N_("-v  --version  Output version info."),
+    N_("--help  Output this help."),
+    "",
+-   N_("FILES are 'FILE1 FILE2' or 'DIR1 DIR2' or 'DIR FILE...' or 'FILE... DIR'."),
+    N_("If --from-file or --to-file is given, there are no restrictions on FILES."),
+-   N_("If a FILE is '-', read standard input."),
+    N_("Exit status is 0 if inputs are the same, 1 if different, 2 if trouble."),
+    0
+  };
+--- 941,949 ----
+    N_("-v  --version  Output version info."),
+    N_("--help  Output this help."),
+    "",
++   N_("FILES are `FILE1 FILE2' or `DIR1 DIR2' or `DIR FILE...' or `FILE... DIR'."),
+    N_("If --from-file or --to-file is given, there are no restrictions on FILES."),
++   N_("If a FILE is `-', read standard input."),
+    N_("Exit status is 0 if inputs are the same, 1 if different, 2 if trouble."),
+    0
+  };

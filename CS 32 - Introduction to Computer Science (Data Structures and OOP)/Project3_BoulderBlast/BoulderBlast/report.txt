@@ -1,0 +1,567 @@
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//
+// 1) High level description of public member functions
+//
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////
+// Public Helper Function
+//////////////////////////////////////////////////////////////////////
+void dirToDeltas(GraphObject::Direction d, int& dx, int& dy)
+	Converts a GraphObject direction to dx and dy (shifts in the x and y position). If the conversion was successful, the deltas are written to the integers passed in by reference. If not, the arguments are unchanged.
+
+
+
+//////////////////////////////////////////////////////////////////////
+// Actor : GraphObject
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething() = 0
+	This function is called to make an Actor perform its specific action during each tick. Because each actor performs an action, and each action (may be) different, the function is pure virtual. This forces each specific type of actor (derived class) to define its own action.
+
+bool isAlive() const
+	This function returns whether an Actor is alive at the given moment (true if alive, false if dead). All Actors should have be either alive or dead (so that the GameWorld can tell whether to animate them or not). The function is constant because it's an accessor, and should not modify the Actor at all. The function isn't virtual because all actors are only alive or dead, and should not have any additional functions
+
+void setDead()
+	This function sets the Actor's state to dead. All Actors should be able to die (so that the GameWorld can tell whether to delete them or not). The function is not constant because it needs to modify the Actor's state. The function isn't virtual because all actors can die, and die the same way.
+
+StudentWorld* getWorld() const
+	Returns a pointer to the GameWorld the actor is a part of. Every Actor is part of a GameWorld, so this is defined in the base Actor class. getWorld is also constant because it's an accessor - the game world is not changed after the Actor is initially created. The function also isnt virtual because the world is accessed the same way in all actors
+
+virtual bool allowsAgentColocation() const
+	Returns whether an Agent is allowed to be on the same space as this actor (true if can, false if can't). Most actors do not allow an agent to occupy the same space as it, however, some agents and actors (bullets for example) can. As a result, the function is virtual so that it can be redefined, but not pure virtual because many actors behave the same way. In addition, this function is const because it should not modify the Actor's state.
+
+virtual bool canPushBoulders() const
+	Returns whether an Actor is allowed to push boulders (true if can, false if can't). Most actors aren't allowed to push boulders, but one is (the player). As a result, the function is virtual so that it can be redefined, but not pure virtual because many actors behave the same way. In addition, this function is const because it should not modify the Actor's state.
+
+virtual bool allowsBoulder() const
+	Returns whether an Actor is allowed to be co-located with a boulder (true if can, false if can't). Most actors can't be co-located with a boulder, however, some can (holes). As a result, the function is virtual so that it can be redefined, but not pure virtual because many actors behave the same way. In addition, this function is const because it should not modify the Actor's state.
+
+virtual bool countsInFactoryCensus() const
+	Returns whether an Actor counts in the Kleptobot factory census (true if counts in census, false if doesn't). Most actors do not count in the census, but a few do (RegularKleptoBots and AngryKleptoBots). As a result, the function is virtual so that it can be redefined, but not pure virtual because many actors behave the same way. In addition, this function is const because it should not modify the Actor's state.
+
+virtual bool stopsBullet() const
+	Returns whether an Actor can stop a bullet from continuing on (true if stops bullet, false if not). Most actors stop bullets, but a few don't (holes, exits, etc). As a result, the function is virtual so that it can be redefined, but not pure virtual because many actors behave the same way. In addition, this function is const because it should not modify the Actor's state.
+
+virtual bool isDamageable() const
+	Returns whether an Actor can be damaged by a bullet (true if can be damaged, false if can't). Most actor's can't be damaged by bullets, but a few can (player, robots, boulder). As a result, the function is virtual so that it can be redefined, but not pure virtual because many actors behave the same way. In addition, this function is const because it should not modify the Actor's state.
+
+virtual void damage(unsigned int damageAmt)
+	Damages the actor (reduces their hp) by the amount "damageAmt". If this causes the actor's hit points to drop below 0, then the actor's state is set to dead. All actors that can be damaged (isDamageable) sustain damage the same way, however, some have additional effects. As a result, the function is virtual so that it can be extended, but not pure virtual because all actors have the same base functionality.
+
+bool bePushedBy(Agent* a, int x, int y)
+	Returns true if the actor can be pushed by an agent (otherwise returns false). If the actor can be pushed (only boulders), and the agent pushing can push boulders, the actor is moved to the new location (x, y). Because only boulder's are pushable, this function returns false for any actors but Boulders. This function is not virtual because it has the same functionality for all actos. In addtion, this function is defined in the actor class because all actors can either be pushed or not be pushed.
+
+virtual bool isSwallowable() const
+	Returns whether an Actor can be swallowed by a hole (true if can be swallowed, false if not). Most actors can't be swallowed, but some can (boulders). As a result, the function is virtual so that it can be redefined, but not pure virtual because many actors behave the same way. In addition, this function is const because it should not modify the Actor's state.
+
+virtual bool isStealable() const
+	Returns whether an Actor can be stolen by a Kleptobot (true if can be stolen, false if not). Most actors can't be stolen, but some can (goodies). As a result, the function is virtual so that it can be redefined, but not pure virtual because many actors behave the same way. In addition, this function is const because it should not modify the Actor's state.
+
+unsigned int getHitPoints() const
+	Returns the amount of hit points the actor has left. All actors have a number of hit points, so this function is defined in the Actor class. The function is not virtual because all actors store hit points in the same way. In addition, this function is const because it should not modify the Actor's state.
+
+void setHitPoints(int amt)
+	Sets the actor's hit points to the value "amt". All actors have a number of hit points, and are stored the same way, so this function is defined in the Actor class and is not virtual. This function is not const because it modifies the Actor's number of hit points.
+
+virtual GoodieType getGoodieType() const
+	Returns what kind of goodie the Actor is. If the actor is not a type of goodie, this function returns the enumerated type GoodieType "no_goodie". While most actors are not a type of goodie, some are (ExtraLifeGoodie, AmmoGoodie, RestoreHealthGoodie). As a result, the function is virtual so that it can be redefined, but not pure virtual because many actors behave the same way. In addition, this function is const because it should not modify the Actor's state.
+
+void setGoodieType(GoodieType x)
+    Sets the Actor's goodie type to the input "x". This is used to initialize if the kind of goodie the actor is. The goodie type for each actor is stored the same way, so the function is not virtual (does not need to be redefined).
+
+
+
+//////////////////////////////////////////////////////////////////////
+// Agent : Actor
+//////////////////////////////////////////////////////////////////////
+bool moveIfPossible()
+	Attempts to move the agent to the adjacent square in its current direction only if the adjacent square is not blocked (all actors on the square allow agent co-location). If the move was successful, the function returns true. Otherwise, if the agent can't move, the function returns false. Because only Agents can't move to spaces blocked by agent co-location, moveIfPossible is defined in the Agent class. The function is not virtual because all Agents move the same way, and is not constant because moving changes the Actor's X and Y coordinates.
+
+virtual bool needsClearShot() const = 0
+	Returns true if the agent can only shoot if there is a clear shot between it and the target. This is true for robots, but false for players (defined for all Agents, but different for all agents as well). As a result, I made this function pure virtual. In addition, this function is const because it should not modify the Agent.
+
+virtual int shootingSound() const = 0
+	Returns an integer which represents the sound the agent makes when it shoots a bullet. All agents have a specific sound they make when they shoot, however, it's different for all agents. As a result, I made this function pure virtual - so that every agent defines what sound it makes when it shoots. In addition, this function is const because it should not modify the Agent.
+
+bool shoot()
+	Causes the GameWorld to create a bullet in the adjacent space in front of the Agent, with a direction of the Agent's current direction. Returns true if the shooting was successful (bullet was created) and returns false otherwise. This function is not virtual because all Agents shoot the same way.
+
+
+
+//////////////////////////////////////////////////////////////////////
+// Player : Agent
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	The player's action at each tick:
+	In each tick, the player only performs its normal actions if it's alive. The player checks to see if there is any input (key presses) from the user. If the user pressed any arrow keys/chose to move the player, the player's direction is changed to that direction, and the player attempts to move 1 space over in that new direction (if it can move it moves, but if it can't move, its direction is still changed anyways). If the user presses space, the player fires a bullet (creates a bullet 1 space in front of it with the same direction as the player) and the player's ammunition is decreased by 1. If the user presses q, the player kills itself (sets its state to dead) and loses 1 life. Otherwise, if during the current tick the user doesn't enter any input, the player doesn't do anything.
+
+virtual bool isDamageable() const
+	The player is damageable, while most actors are not, so this function is redefined to always return true.
+
+virtual void damage(unsigned int damageAmt)
+	When the player is damaged, in addition to the hit points being decremented, sounds are played (a sound for when the player is hit and dies, and a sound for when the player is just hit). The function also decrements the number of lives the player has if it dies. As a result, the damage function is redefined.
+
+virtual bool canPushBoulders() const
+	Most Actors can't push boulders, but the player can. As a result, the virtual function is redefined to always return true;
+
+virtual bool needsClearShot() const
+	Players can shoot whenever they want, as long as they have ammunition left. As a result, the virtual function is redefined to always return false.
+
+virtual int shootingSound() const
+	Returns the sound corresponding to the player shooting a bullet. Redefined from the agent's shootingSound()
+
+unsigned int getHealthPct() const
+	Uses the player's hit points to calculate the health percentage. Returns a number between 0 and 100 that represents the percentage of health the player has left. Only the player has a health percentage, so this function is not virtual. In addition, this function is const because it should not modify the Player.
+
+unsigned int getAmmo() const
+	Returns the amount of ammunition the player has left. Only the Player has ammunition, so this function is not virtual. In addition, this function is const because it should not modify the Player.
+
+void restoreHealth()
+	Restores the player's health to its maximum amount. Only the Player can restore health (from RestoreHealthGoodies), so this function is not virtual. 
+
+void increaseAmmo()
+	Increases the player's ammunition by 20. Only the Player has ammunitiion, so this function is not virtual.
+
+void decreaseAmmo()
+	Decreases the player's ammunition by 1. Only the Player has ammunition, so this function is not virtual.
+
+
+
+//////////////////////////////////////////////////////////////////////
+// Wall : Actor
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	The wall's action at each tick.
+	The wall doesn't do anything at all.
+
+
+
+//////////////////////////////////////////////////////////////////////
+// Boulder : Actor
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	The Boulder's action at each tick.
+	The Boulder doesn't do anything at all.
+
+virtual bool isDamageable()
+	The boulder is damageable, so this function is redefined to always return true.
+
+virtual bool isSwallowable()
+	The boulder is damageable, so this function is redefined to always return true.
+
+virtual bool bePushedBy(Agent* a, int x, int y)
+	If the agent a is alive and is a boulder (can be pushed), this function moves it to the position x, y
+	
+
+//////////////////////////////////////////////////////////////////////
+// Hole : Actor
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	The Hole's action at each tick.
+	If the hole is alive, the hole attempts to swallow a swallowable object at its location.
+
+virtual bool allowsBoulder() const
+	The hole can be co-located with a boulder, so this function is redefined to always return true.
+
+virtual bool stopsBullet() const
+	The hole doesn't stop bullets, so this function is redefined to always return false.
+
+
+
+//////////////////////////////////////////////////////////////////////
+// Exit : Actor
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	The Exit's action at each tick.
+	If the exit has not yet been revealed, and there are no more jewels on the board, then the exit reveals itself (sets itself to visible) and plays the corresponding sound. Then, if the player is co-located with the exit, and the exit is visible, the game goes onto the next level (the corresponding sound is also played). The exit adds 2000 points to the game's score, and any remaining bonus points are also added to the score.
+
+virtual bool allowsAgentColocation() const
+	Because the exit can be moved over, this function is redefined to always return true.
+
+virtual bool stopsBullet() const
+	Because the exit doesn't stop bullets, this function is redefined to always return false.
+
+
+
+//////////////////////////////////////////////////////////////////////
+// Bullet : Actor
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	The Bullet's action at each tick.
+	If the bullet is not alive, the normal actions are not taken. At each tick, the bullet attempts to damage all damageable Actors at its given space. Then, it moves forwards 1 space in its given direction and attempts to damage all damageable Actors in its new space.
+
+virtual bool allowsAgentColocation() const
+	Because the bullet can pass over agents, this function is redefined to always return true;
+
+virtual bool stopsBullet() const
+	Because the bullet doesn't stop other bullets, this function is redefined to always return false
+
+
+
+//////////////////////////////////////////////////////////////////////
+// PickupableItem : Actor
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething() = 0
+	I made this purely virtual because the PickupableItem is an abstract base class
+
+unsigned int returnScore() const
+	Returns the score value of the item (how much the item adds to the score if it's picked up). Because this is an accessor that all Goodies/Jewels share, this is a nonvirtual constant function
+virtual bool allowsAgentColocation() const
+	Because agents can move over items, this function is redefined to always return true
+virtual bool stopsBullet() const
+	Because this Actor doesn't stop bullets, this function is redefined to always return false
+
+
+//////////////////////////////////////////////////////////////////////
+// Jewel : Actor
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	The Jewel's action during each tick.
+	If the Jewel is located on the same square as a Player object, the Jewel sets itself to dead (deletes itself), increases the game's score by 50, decreases the number of jewels on the board by 1, and plays the corresponding sound.
+
+
+
+//////////////////////////////////////////////////////////////////////
+// Goodie : Actor
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	The Goodie's action at every tick.
+	If the Goodie is alive and there is a player on the same location as the goodie, the goodie sets itself to dead, increases the game score by the the PickupableItem's score value, plays the corresponding sound (goodie pickup)
+
+virtual bool isStealable() const
+	Because all Goodies are stealable, this function is redefined to always return true;
+
+
+//////////////////////////////////////////////////////////////////////
+// ExtraLifeGoodie : Actor
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	The ExtraLifeGoodie's action at every tick.
+	The ExtraLifeGoodie performs all the actions the normal goodie would perform, but also increases the player's number of lives by 1
+
+
+//////////////////////////////////////////////////////////////////////
+// RestoreHealthGoodie : Actor
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	The RestoreHealthGoodie's action at every tick.
+	The RestoreHealthGoodie performs all the actions the normal goodie would perform, but also restores the player's health to full
+
+
+//////////////////////////////////////////////////////////////////////
+// AmmoGoodie : Actor
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	The AmmoGoodie's action at every tick.
+	The AmmoGoodie performs all the actions the normal goodie would perform, but also increases the player's ammo count by 20
+
+
+
+//////////////////////////////////////////////////////////////////////
+// Robot : Agent
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	Robot's action at every tick.
+	The Robot only moves at certain ticks. It has 2 variables that keep track of the 1) current tick it's on, and 2) the number of ticks that constitute a cycle. Each tick, the current tick integer is incremented. If the current tick is equal to the tick cycle number, the robot performs its normal actions (not resting). If the current tick is greater than the tick cycle number, the current tick is reset back to 1.
+
+virtual bool isDamageable() const
+	All Robots are damageable, so the function is redefined to always return true
+
+virtual void damage(unsigned int damageAmt)
+	When the robot is damaged, in addition to the hit points being decremented, sounds are played (a sound for when the robot is hit and dies, and a sound for when the robot is just hit). As a result, the damage function is redefined.
+
+virtual bool needsClearShot() const
+	Because all robots need a clear shot to the player, this function is redefined to always return true
+
+virtual int shootingSound() const
+	Returns the corresponding shooting sound for enemies (SOUND_ENEMY_FIRE)
+
+virtual int returnScore() const
+	Returns the amount of points the robot is worth (when any robot is killed, a certain amount of points are added to the game score)
+
+virtual int getTick() const
+	Returns the number of ticks that constitute a cycle for the robot (the robot sleeps/rests for n-1 ticks, then performs its normal doSomething actions on the nth tick)
+
+virtual int getCurTick() const
+	Returns the current tick the robot is on in the cycle
+
+virtual void setCurTick(int t)
+	Sets the current tick the robot is on to the integer t
+
+virtual bool performAction() const
+	This function returns true if the robot is allowed to perform its normal actions at the current tick. If the robot is resting, the function returns false.
+
+virtual bool isShootingRobot() const
+	Robots by default don't shoot, so this is redefined to always return false
+
+
+//////////////////////////////////////////////////////////////////////
+// SnarlBot : Robot
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	SnarlBot's action at every tick.
+	The Snarlbot uses the Robot base class's doSomething() to keep track of ticks (resting or not). If the Snarlbot is alive and is not resting, it will attempt to shoot if the player is within its line of fire, otherwise it will attemp to move 1 space forwards. If it can't move fowards, it reverses its direction.
+
+virtual bool isShootingRobot() const
+	Because the SnarlBot can shoot, this function is redefined to always return true;
+
+
+//////////////////////////////////////////////////////////////////////
+// KleptoBot : Robot
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	KleptoBot's action at every tick.
+	The Kleptobot base class uses the Robot base class's doSomething() to keep track of ticks (resting or not). If the Kleptobot is alive and not resting, it will perform its normal actions. If there is a goodie on the same square as the Kleptobot and the Kleptobot is not already holding a goodie, there is a 1 in 10 chance that the Klepto bot will "steal" the goodie (the goodie is deleted from the world, and the Kleptobot is now holding a goodie that will drop when it dies). Otherwise, the Kleptobot attempt to move forwards a certain random distance between 1 and 6 squares (one square per tick) before turning a random direction. If during the current tick the Kleptobot has not yet traveled the certain distance, it will attempt to move forward 1 square. If the Kleptobot cannot move forwards, it will turn in a random direction and attempt to move forwards in the new direction (resetting its distance to a random number between 1 and 6 in the process). If it cannot move in any of the 4 directions, it will just set its direction to a random direction.
+
+virtual bool countsInFactoryCensus() const
+	Because Kleptobots always count in the factory census, this function is redefined to always return true
+
+virtual GoodieType getHeld() const
+	This function returns the type of held goodie (enumerated type: no_goodie, extra_life_goodie, restore_health_goodie, or ammo_goodie). Because it doesn't modify the Kleptobot, it's a constant function
+
+virtual void setHeld(GoodieType n)
+	This function sets the type of held goodie to n (enumerated type: no_goodie, extra_life_goodie, restore_health_goodie, or ammo_goodie).
+
+virtual void dropHeld()
+	This function "drops" the held goodie if the Kleptobot is holding one. It does this by adding a goodie of the held type to the game world, in the same x and y coordinates as the Kleptobot
+
+
+//////////////////////////////////////////////////////////////////////
+// RegularKleptoBot : Robot
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	RegularKleptoBot's actions during each tick
+	RegularKleptoBot uses the Robot base's doSomething() to keep track of ticks and resting. It uses the Kleptobot base's doSomething() to perform the normal Kleptobot actions.
+
+virtual bool isShootingRobot() const
+	Because the RegularKleptoBot does not shoot, this function is redefined to always return false
+
+
+//////////////////////////////////////////////////////////////////////
+// AngryKleptoBot : Robot
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	AngryKleptoBot's actions during each tick
+	AngryKleptoBot uses the Robot base's doSomething() to keep track of ticks and resting. If the AngryKleptoBot is alive, not resting, and a player is withink its line of sight, it will attempt to shoot. It uses the Kleptobot base's doSomething() to perform the rest of the normal Kleptobot actions.
+
+
+//////////////////////////////////////////////////////////////////////
+// KleptoBotFactory : Robot
+//////////////////////////////////////////////////////////////////////
+virtual void doSomething()
+	KleptoBotFactory's actions during each tick.
+	If the Kleptobot factory is alive, and there are fewer than 3 Kleptobots in the grid within 3 squares of the factory's location (7x7 grid), then the Kleptobot factory creates a Kleptobot of its type (there are AngryKleptoBot factories, and RegularKleptoBot factories). It also plays the corresponding sound
+
+virtual bool stopsBullet() const
+	Because the Kleptobot factories stop bullets, this function is redefined to always return true
+
+
+//////////////////////////////////////////////////////////////////////
+// StudentWorld : GameWorld
+//////////////////////////////////////////////////////////////////////
+virtual ~StudentWorld()
+	calls cleanup()
+
+virtual int init()
+	This function is virtual because it redefines the GameWorld function. In init(), we set the initial number of bonus points to 1000, load the next level (or if next level cannot be loaded, we win the game), and initialize all the Actors that exist in the world according to the level's map. We also initialize the Player.
+
+virtual int move()
+	This function is virtual because it redefines the GameWorld function. The move() function is each "tick". When move() is called, the bonus score is decremented. If the player is not dead, and the level is not yet finished, the Player has an opportunity to doSomething(), and every Actor that exists in the world has an opportunity to doSomething(). The move() also updates the game status text. Afterwards, any dead Actors are deleted. If at the end of move(), the player is not dead and the level is not yet finished, move returns GWSTATUS_CONTINUE_GAME
+
+virtual void cleanUp()
+	cleanUp() deletes the player, and all the actors in the game world.
+
+No helper functions in StudentWorld are virtual (besides init(), move(), and cleanup()), because we don't redefine any GameWorld functions, and we don't have any derived classes
+
+bool canAgentMoveTo(Agent* agent, int x, int y, int dx, int dy) const
+	Returns true if the agent can move from x, y to x+dx, y+dy. The function also pushes boulders in to holes (and swallows them) if the agent is a player and the agent can move from x, y to x+dx, y+dy. This is done by checking agent co-location. This is a constant function because it does not modify the StudentWorld.
+	pseudocode:
+	check all the actors in the world:
+		if actor on adjacent square does not allow agent co-location:
+			if 	actor on adjacent square is boulder and
+				can move boulder to the square behind adjacent
+					move the boulder
+					if hole exists on the spot boulder moved to
+						"Swallow"
+					return true (agent can move)
+			else
+				return false (agent can't move)
+	after checking all the actors
+		return true (agent can move)
+
+
+bool canBoulderMoveTo(int x, int y) const
+	Returns true if the boulder can move onto the square x, y. This is a constant function because it does not modify the StudentWorld.
+
+bool swallowSwallowable(Actor* a) const
+	If Actor a is alive, and if any living boulders exist on the same square as a (hole), "Swallow" (destroy) one, as well Actor a. If anything was swallowed, return true, otherwise, return false. This is a constant function because it does not modify the StudentWorld.
+
+bool isPlayerColocatedWith(int x, int y) const
+	Returns true if there exist actors besides the player on the square x, y. This is a constant function because it does not modify the StudentWorld.
+
+bool damageSomething(Actor* a, unsigned int damageAmt)
+	If Actor a (bullet) is still alive, attempt to damage all actors at the bullet's location. Afterwards, if any of the actors stop the bullet and prevent it from continuing, delete the bullet. If the bullet was stopped, return true, otherwise, return false.
+
+bool existsClearShotToPlayer(int x, int y, int dx, int dy) const
+	Return true if a bullet at x,y moving in direction dx,dy could hit the player without encountering any obstructions. This is a constant function because it does not modify the StudentWorld.
+	Pseudocode: 
+		determine if shot is vertical or horizontal by using dx and dy
+		find player x and y position
+		if vertical:
+			if player x position does not match bullet x position, return false
+			else check every actor:
+				if an actor's x position matches player x:
+					if actor's y position is not between player x and bullet x
+						return false
+			return true
+		do the same for horizontal, but everywhere where x is compared, compare y's, and vice versa
+
+bool doFactoryCensus(int x, int y, int distance, int& count) const
+	If a factory is at x,y, count is set to the number of kleptobots of the type that should be counted that are in the rectangle bounded by x-distance,y-distance and x+distance,y+distance. The function then returns true. If a kleptobot is on the factory, the count is unchanged, and the function returns false.
+
+Actor::GoodieType steal(int x, int y)
+	If an item that can be stolen exists on the square x, y, return the type of goodie it is, and delte the item (set it to dead). Otherwise, return no_goodie (no stealable items on that x, y position)
+
+void restorePlayerHealth()
+	Restore's the player's health back to the full amount
+
+void increaseAmmo()
+	Increases the player's ammunition by 20
+
+bool anyJewels() const
+	Returns true if any jewels are still left in the level
+
+bool decJewels()
+	Reduce the count of the number of jewels in this level by 1
+
+void setLevelFinished()
+	Tell the game world that the level has finished, so that the next tick is never called
+
+void addActor(Actor* a)
+	Add Actor a to the world, and set it to visible
+
+void setGameStatus(int stat)
+	Set the game world status to "stat" (ex: stat can be GWSTATUS_PLAYER_DIED)
+
+Actor* getPlayer() const
+	Returns a pointer to the player if the player exists, otherwise return nullptr. This is a constant function because it does not modify the StudentWorld.
+
+string composeString() const
+	Composes and returns the game status string with level, score, bonus, etc
+
+int getBonus() const
+	Returns the current amount of bonus points.
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//
+// 2) List of functionality failed to implement
+//
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+
+All functionality was implemented
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//
+// 3) Miscellaneous Design Decisions
+//
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+
+I chose to make the bullet not move right after it was created, and instead move in the tick following its creation (because it was created after the game world drew all the Actors, so it would not be able to be seen). 
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//
+// 4) Description of how classes were tested
+//
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////
+// Actor
+//////////////////////////////////////////////////////////////////////
+I tested this class by making sure I couldn't instantiate any objects of type Actor; because Actor is an abstract base class. Besides that, I tested Actor member functions by testing my derived classes (the ones that didn't redefine some member functions) and tested the Actor constructor by using initializerLists in derived class constructors.
+
+//////////////////////////////////////////////////////////////////////
+// Agent
+//////////////////////////////////////////////////////////////////////
+I tested this class by making sure I couldn't instantiate any objects of type Agent; because Agent is an abstract base class. Besides that, I tested Agent member functions by testing my derived classes (the ones that didn't redefine some member functions) and tested the Agent constructor by using initializerLists in derived class constructors. I also used Agent to test the Actor constructor.
+
+//////////////////////////////////////////////////////////////////////
+// Player
+//////////////////////////////////////////////////////////////////////
+I tested this class by instantiating a player and using breakpoints to stop my program and check that my player did indeed have the private member variables it should have had. I also tested its doSomething() function by inputting all the possible inputs (directional arrow keys, space, q). I tested its restoreHealth(), increaseAmmo(), decreaseAmmo() and other public functions by manually coding them into the move() function and by setting breakpoints to see if these functions did indeed do what I wanted them to do
+
+//////////////////////////////////////////////////////////////////////
+// Robot
+//////////////////////////////////////////////////////////////////////
+I tested this class by instantiating a "Robot" with an IID_SNARLBOT, and startDirection GraphObject::right. I then tested the doSomething() by comparing the robot's motion with the countdown of the bonus score (bonus score decreases at 1 per tick, while the robot should only perform an action every few ticks). I tested the other member functions by using derived classes.
+
+//////////////////////////////////////////////////////////////////////
+// SnarlRobot
+//////////////////////////////////////////////////////////////////////
+I tested this class by instantiating Snarlbots, both vertical and horizontal. I tested the member functions isShootingRobot() and StudentWorld's existsClearShotToPlayer() by standing in front and behind of the Snarlbot and seeing if it shot me. I also tested the Snarlbot's doSomething() by allowing them to move (they matched the example program's movement). In addition, I tested my damageSomething() from StudentWorld, damage() and isDamageable() from the Robot base class by shooting at the Snarlbot and seeing if they died.
+
+//////////////////////////////////////////////////////////////////////
+// KleptoBot, RegularKleptoBot, AngryKleptoBot
+//////////////////////////////////////////////////////////////////////
+I tested my Kleptobot class by instantiating RegularKleptoBots and AngryKleptobots (hard coding them into the init() and move() function). I tested my KleptoBot base class's doSomething() by seeing if RegularKleptobot's moved in the same way as the example program. I also tested the damageSomething() from StudentWorld, damage() and isDamageable() from the Player, and the shoot() from Agent by allowing the AngryKleptobots to shoot at me. In addition, I allowed Kleptobots to pick up items (StudentWorld's steal()) and move around (so that when I killed them in a different spot they would drop the item in the correct location).
+
+//////////////////////////////////////////////////////////////////////
+// KleptoBotFactory
+//////////////////////////////////////////////////////////////////////
+I tested the KleptoBotFactory by allowing it to instantiate multiple Kleptobots. I also tested the StudentWorld's doFactoryCensus() by seeing if the factories would produce more Kleptobots if there already existed 3 in the grid around it. In addition I tested the KleptoBotFactory's isDamageable by shooting bullets at it.
+
+//////////////////////////////////////////////////////////////////////
+// PickupableItem
+//////////////////////////////////////////////////////////////////////
+I tested this class by making sure I couldn't instantiate any objects of type PickupableItem; because PickupableItem is an abstract base class. Besides that, I tested PickupableItem member functions by testing my derived classes (the ones that didn't redefine some member functions) and tested the PickupableItem constructor by using initializerLists in derived class constructors. I also used PickupableItem to test the Actor constructor.
+
+//////////////////////////////////////////////////////////////////////
+// Jewel
+//////////////////////////////////////////////////////////////////////
+I tested the Jewel by walking on top of it and using breakpoints in the move() function to see if the Jewel added the correct number of points to the score. I also checked to see that the anyJewels function in StudentWorld would return correctly (return true if any jewels exist, return false if no jewels exist).
+
+//////////////////////////////////////////////////////////////////////
+// Goodie, ExtraLifeGoodie, RestoreHealthGoodie, AmmoGoodie
+//////////////////////////////////////////////////////////////////////
+I tested Goodie (base class) by instantiating the derived classes ExtraLifeGoodie, RestoreHealthGoodie, and AmmoGoodie. I tested these derived classes by instantiating them, and picking them up and checking that their effects did indeed happen (I set a breakpoint in the move() and checked to see that my health was restored, my # of lives increased, and my ammo increased). I also allowed Kleptobots to pick up each of these goodies, and drop them afterwards. Afterwards, I picked up the dropped goodies to check that their effects didn't change.
+
+//////////////////////////////////////////////////////////////////////
+// Exit
+//////////////////////////////////////////////////////////////////////
+I tested the exit by walking over it and allowing Snarlbots and Kleptobots to walk over them. I also attempted to push boulders over the exit (and they couldn't move over the exit, as expected). In addition, I fired bullets over the exit, as well as made Kleptobots drop Goodies on the exit. Lastly, I instantiated Jewels and made sure that the exit only revealed itself (and played its reveal sound) when I collected the last Jewel (and only did this once).
+
+//////////////////////////////////////////////////////////////////////
+// Wall
+//////////////////////////////////////////////////////////////////////
+I tested the wall by walking and shooting into them. I also allowed Snarlbots and Kleptobots to walk into them. In addition, I pushed Boulders into walls. In each case, the wall reacted exactly how I expected: the Wall was not damaged, and nothing happened.
+
+//////////////////////////////////////////////////////////////////////
+// Boulder, Hole
+//////////////////////////////////////////////////////////////////////
+I tested the Boulders by shooting at them and making sure that I could damage and destroy them. I tested Holes the same way, by shooting at them and making sure the bullet could pass over them. I also walked into Boulders and Holes to make sure that I couldn't pass through either of them, but that I could push Boulders around and not Holes. In addition, I pushed Boulders into holes and made sure that a Hole would swallow a Boulder, and delete both themselves.
+
+//////////////////////////////////////////////////////////////////////
+// Bullet
+//////////////////////////////////////////////////////////////////////
+I tested my bullet class by firing bullets at all the different types of Actors. I also tested my bullet class by allowing Snarlbots and Kleptobots to fire at my player and all different types of Actors. I allowed both Vertical and Horizontal Snarlbots, and Kleptobots that were holding and weren't holding goodies to fire.

@@ -1,0 +1,102 @@
+***************
+*** 115,121 ****
+    if (reason_msgid)
+      error (0, 0, _(reason_msgid), operand);
+    error (EXIT_TROUBLE, 0,
+- 	 _("Try `%s --help' for more information."), program_name);
+    abort ();
+  }
+  
+--- 115,121 ----
+    if (reason_msgid)
+      error (0, 0, _(reason_msgid), operand);
+    error (EXIT_TROUBLE, 0,
++ 	 _("Try '%s --help' for more information."), program_name);
+    abort ();
+  }
+  
+***************
+*** 134,140 ****
+    if (! (e == LONGINT_OK
+  	 || (e == LONGINT_INVALID_SUFFIX_CHAR && **argptr == delimiter))
+        || TYPE_MAXIMUM (off_t) < val)
+-     try_help ("invalid --ignore-initial value `%s'", arg);
+    if (ignore_initial[f] < val)
+      ignore_initial[f] = val;
+  }
+--- 134,140 ----
+    if (! (e == LONGINT_OK
+  	 || (e == LONGINT_INVALID_SUFFIX_CHAR && **argptr == delimiter))
+        || TYPE_MAXIMUM (off_t) < val)
++     try_help ("invalid --ignore-initial value '%s'", arg);
+    if (ignore_initial[f] < val)
+      ignore_initial[f] = val;
+  }
+***************
+*** 185,191 ****
+  	  _("SKIP values may be followed by the following multiplicative suffixes:\n\
+  kB 1000, K 1024, MB 1,000,000, M 1,048,576,\n\
+  GB 1,000,000,000, G 1,073,741,824, and so on for T, P, E, Z, Y."),
+- 	  _("If a FILE is `-' or missing, read standard input."),
+  	  _("Exit status is 0 if inputs are the same, 1 if different, 2 if trouble."));
+    emit_bug_reporting_address ();
+  }
+--- 185,191 ----
+  	  _("SKIP values may be followed by the following multiplicative suffixes:\n\
+  kB 1000, K 1024, MB 1,000,000, M 1,048,576,\n\
+  GB 1,000,000,000, G 1,073,741,824, and so on for T, P, E, Z, Y."),
++ 	  _("If a FILE is '-' or missing, read standard input."),
+  	  _("Exit status is 0 if inputs are the same, 1 if different, 2 if trouble."));
+    emit_bug_reporting_address ();
+  }
+***************
+*** 231,237 ****
+  	{
+  	  uintmax_t n;
+  	  if (xstrtoumax (optarg, 0, 0, &n, valid_suffixes) != LONGINT_OK)
+- 	    try_help ("invalid --bytes value `%s'", optarg);
+  	  if (n < bytes)
+  	    bytes = n;
+  	}
+--- 231,237 ----
+  	{
+  	  uintmax_t n;
+  	  if (xstrtoumax (optarg, 0, 0, &n, valid_suffixes) != LONGINT_OK)
++ 	    try_help ("invalid --bytes value '%s'", optarg);
+  	  if (n < bytes)
+  	    bytes = n;
+  	}
+***************
+*** 257,263 ****
+        }
+  
+    if (optind == argc)
+-     try_help ("missing operand after `%s'", argv[argc - 1]);
+  
+    file[0] = argv[optind++];
+    file[1] = optind < argc ? argv[optind++] : "-";
+--- 257,263 ----
+        }
+  
+    if (optind == argc)
++     try_help ("missing operand after '%s'", argv[argc - 1]);
+  
+    file[0] = argv[optind++];
+    file[1] = optind < argc ? argv[optind++] : "-";
+***************
+*** 269,275 ****
+      }
+  
+    if (optind < argc)
+-     try_help ("extra operand `%s'", argv[optind]);
+  
+    for (f = 0; f < 2; f++)
+      {
+--- 269,275 ----
+      }
+  
+    if (optind < argc)
++     try_help ("extra operand '%s'", argv[optind]);
+  
+    for (f = 0; f < 2; f++)
+      {

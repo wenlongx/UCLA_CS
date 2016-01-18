@@ -1,0 +1,53 @@
+Homework 1
+Wenlong Xiong (204407085)
+
+Problem 2.66
+int leftmost_one(unsigned x)
+{
+    x = x | (x >> 1);
+    x = x | (x >> 2);
+    x = x | (x >> 4);
+    x = x | (x >> 8);
+    x = x | (x >> 16);
+
+    return x ^ (x >> 1);
+}
+
+
+Problem 2.71
+A) The code is wrong because the mask deletes all the bits left of the extracted byte. As a result, the byte is not sign extended (for example, if the function were called with the arguments 0xFFFFFFFF and 0, the current function would result in 0x000000FF instead of the correct sign extended 0xFFFFFFFF).
+B)
+int xbyte(packed_t word, int bytenum)
+{
+    int temp = word << ((3 - bytenum) << 3);
+    return (temp >> 24);
+}
+
+Problem 2.72
+A)
+sizeof(val) returns a number of type size_t, which is unsigned int. When sizeof(val) is subtracted from maxbytes, maxbytes is converted to unsigned int as well. As a result, the expression always evaluates to true, because unsigned ints cannot go below 0.
+B)
+void copy_int(int val, void *buf, int maxbytes){
+    if (maxbytes >= sizeof(val))
+            memcpy(buf, (void *) &val, sizeof(val));
+}
+
+Problem 2.81
+A)
+This does not always return 1. In 8 bits, if x is the most negative number, x = -128 = 1000 0000, and y is some other integer (lets say y = 1 = 0000 0001, when both are negated, x remains the most negative number x = -128 = 1000 0000, while y becomes its negative y = -1 = 1111 1111. Because of this, -x is not greater than -y, even though x is greater than y.
+B)
+This always returns true, because:
+x << 4 is the equivalent of x * 2^4 - x * 16
+x + y << 4 is the equivalent of x*16 + y*16
+so ((x+y)<<4)+y-x = x*15 + y*17
+C)
+This always returns 1, because this is the definition of two's complement.
+~x + ~y + 1 = ~(x+y)
+add 1 to both sides and this becomes:
+(~x + 1) + (~y + 1) = ~(x+y) + 1
+The definition of two's complement is that the negative of a number is its inverse + 1, so this equation becomes
+-x + -y = -(x+y), which is true. This holds true for INT_MIN, the most negative number, as well.
+D)
+This always returns 1, because casting a signed value as an unsigned value only affects the interpretation of the bitvector, and not how the unary operators operate on them. As a result: (ux-uy) = -(unsigned)(y-x) is just equivalent to (x-y) = -(y-x) in terms of operations on the bitvector.
+E)
+This always returns 1, because bitshifting right then left by the same amount deletes the bits to the right (sets them to 0) while maintaining the rest of the bitvector. This ensures that the bitshifted value is either less than the original by 0, 1, 2, or 3.

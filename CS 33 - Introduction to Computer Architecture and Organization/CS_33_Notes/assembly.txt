@@ -1,0 +1,340 @@
+ Data Types~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C Decl          Intel Type          Assembly Suffix Size (bytes)
+char            byte                b               1
+short           word                w               2
+int             double word         l               4
+long int        double word         l               4
+long long int                                       4
+char*           double word         l               4
+float           single precision    s               4
+double          double precision    l               8
+long double     extended precision  t               10/12
+
+
+Assembly Characteristics~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Minimal Data Types
+    Integer - of 1, 2, or 4 bytes; has both data values and addresses
+    Floating point data - of 4, 8 10 bytes
+    No aggregate data types - just contiguously allocated bytes
+Primitive Operations
+    perform arithmetic function on register
+    transfer data between mem and register (load and store)
+    transfer control (jumps to/from procedures, conditionals)
+
+
+Object Code~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Assembler
+    translates .s (assembly) into .o (object)
+    binary encoding of each instruction
+    missing linkages between code in diff files tho
+Linker
+    resolves references between files (functions)
+    combines with static runtime libraries (code for printf, etc)
+    dynamically linked libraries are linked during runtime
+
+
+Registers~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In IA32, there are 8 Registers
+The first 6 (EAX, EBX, ECX, EDX, ESI, EDI) can be considered general purpose
+EBP and ESP are reserved -> EBP is the frame pointer, ESP is the top of the stack
+Both the reserved registers have to do with the Stack and memory
+
+v------------EAX------------v
+              v-----AX------v
+ _____________ _____________
+|______|______|______|______|
+                 AH     AL
+AX is 16 bits long, EAX is 32 bits long
+The first 4 registers follow this pattern (but with B, C, D, such as EBX, BX, BH, BL)
+EAX represents the 32 bit extension on the original 16 bit AX register
+AH and AL split AX into one byte segments
+
+v------------ESI------------v
+              v-----SI------v
+ _____________ _____________
+|______|______|______|______|
+The next 4 registers (ESI, EDI, EBP, ESP) follow this pattern
+
+
+Assembly Instructions~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+pushl   Src
+    what this does is push to the stack:
+    fetch the operand at Src
+    decrement %esp by 4 (the size of Src)
+    write the operand at the address given by %esp
+
+popl    Dest
+    what this does is pop the top value off the stack:
+    Read the operand at the address given by %esp
+    increment %esp by 4 (shrin the stack)
+    write to Dest
+
+movl    Src, Dest
+    what this does is move a 4-byte long word
+    Operand types
+        Immediate: const integer data (has a $ prefix): $0x00, $-533
+        Register: one of the 8 registers
+        Memory: 4 consecutive bytes of memory
+    
+    Different moves:        src -> dest     C analog
+    movl $0x4, %eax         IMM -> REG      temp = 0x4
+    movl $-147, (%eax)      IMM -> MEM      *p = -147
+    // parenths means mem location stored in register
+    movl %eax, %edx         REG -> REG      temp2 = temp1
+    movl %eax, (%edx)       REG -> MEM      *p = temp
+    movl (%eax), %edx       MEM -> REG      temp = *p
+    
+    Different move instructions:
+    mov~~~~~~~~~normal move
+    movb        move byte
+    movw        move word
+    movl        move double word
+    movs~~~~~~~~sign extend
+    movsbw      move sign extended byte to word
+    movsbl      move sign extended byte to double word
+    movswl      move sign extended word to double word
+    movz~~~~~~~~zero extend
+    movzbw      move zero extended byte to word
+    movzbl      move zero extended byte to double word
+    movzwl      move zero extended word to double word
+    
+    Different addressing modes
+    movl (%ecx), %eax       access mem at given register (like dereferencing a ptr)
+    movl D(%ebp), %edx      go to that address in mem, then go fwd or back D bytes
+    movl 8(%ebp), %edx      go forwards 8 bytes from address
+    movl -8(%ebp), %edx     go backwards 8 bytes from that address
+    
+leal    Src, Dest
+    load effective address - computes address without doing mem reference
+    also used to compute arithmetic expressions in the form x + k*y
+    sets Dest to the ADDRESS denoted by the expression in Src
+
+addl    Src, Dest       Dest = Dest + Src   # add
+subl    Src, Dest       Dest = Dest - Src   # subtract
+imull   Src, Dest       Dest = Dest * Src   # multiply (signed)
+mull    Src, Dest       Dest = Dest * Src   # multiply (unsigned)
+sall    Src, Dest       Dest = Dest << Src  # arith left shift
+shll    Src, Dest       ^ same as above     # logic left shift
+sarl    Src, Dest       Dest = Dest >> Src  # arith right shift
+shrl    Src, Dest       Dest = Dest >> Src  # logic right shift
+xorl    Src, Dest       Dest = Dest ^ Src   # xor
+andl    Src, Dest       Dest = Dest & Src   # and
+orl     Src, Dest       Dest = Dest | Src   # or
+incl    Dest            Dest = Dest + 1     # increment
+decl    Dest            Dest = Dest - 1     # decrement
+negl    Dest            Dest = - Dest       # negate
+notl    Dest            Dest = ~ Dest       # not
+cltd    Dest            Dest = SignExtend(Dest)
+
+ret     returns the value in the %eax
+
+
+Control~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Condition Codes - implicitly set by arithmetic ops, but not by leal
+    CF: Carry Flag      carry out of the most significant bit (unsigned overflow)
+    ZF: Zero Flag       most recent operation yielded zero
+    SF: Sign Flag       most recent operation yielded negative value (x < 0)
+    OF: Overflow Flag   most recent op caused two's compl to overflow (pos/neg)
+
+can explicitly set by using the Compare Instruction
+cmpl    Src2, Src1
+    sets condition codes based on value of Src1 - Src2
+testl   Src2, Src1
+    sets condition codes based on value of Src1 & Src2
+
+SetX Instructions - sets a single byte to 0 or 1 (doesnt alter remaining 3)
+sete    Dest    Dest = ZF               Equal/Zero
+setne   Dest    Dest = ~ZF              Not Equal/Not Zero
+sets    Dest    Dest = SF               Negative
+setns   Dest    Dest = ~SF              Nonnegative
+setg    Dest    Dest = ~(SF^OF)&~ZF     Greater (Signed)
+setge   Dest    Dest = ~(SF^OF)         Greater or Equal (Signed)
+setl    Dest    Dest = (SF^OF)          Less (Signed)
+setle   Dest    Dest = (SF^OF)|ZF       Less or Equal (Signed)
+seta    Dest    Dest = ~CF&~ZF          Above (Unsigned)
+setb    Dest    Dest = CF               Below (Unsigned)
+
+Jumps - jumps to certain place if condition is satisfied
+jmp     Label       1               Direct Jump
+jmp     *Operand    1               Indirect Jump
+je      Label       ZF              Equal/Zero
+jne     Label       ~ZF             Not Equal
+js      Label       SF              Negative
+jns     Label       ~SF             Nonnegative
+jg      Label       ~(SF^OF)&~ZF    Greater (Signed)
+jge     Label       ~(SF^OF)        Greater or Equal (Signed)
+jl      Label       (SF^OF)         Less (Signed)
+jle     Label       (SF^OF)|ZF      Less or Equal (Signed)
+ja      Label       ~CF&~ZF         Above (Unsigned)
+jae     Label       ~CF             Above or Equal (Unsigned)
+jb      Label       CF              Below (Unsigned)
+jbe     Label       CF|ZF           Below or Equal (Unsigned)
+Example:
+    jmp .L1
+.L1:
+    pop1 %edx
+
+Conditional Move - mov instruction, but only if the condition is satisfied
+cmove   Src, Dest   ZF              Equal/Zero
+cmovne  Src, Dest   ~ZF             Not Equal/Not Zero
+cmovs   Src, Dest   SF              Negative
+cmovns  Src, Dest   ~SF             Nonnegative
+cmovg   Src, Dest   ~(SF^OF)&~ZF    Greater (Signed >)
+cmovge  Src, Dest   ~(SF^OF)        Greater or Equal (Signed >=)
+cmovl   Src, Dest   (SF^OF)         Less (Signed <)
+cmovle  Src, Dest   (SF^OF)|ZF      Less or Equal (Signed <=)
+cmova   Src, Dest   ~CF&~ZF         Above (Unsigned >)
+cmovae  Src, Dest   ~CF             Above or Equal (Unsigned >=)
+cmovb   Src, Dest   CF              Below (Unsigned <)
+cmovbe  Src, Dest   CF|ZF           Below or Equal (Unsigned <=)
+
+Psuedocode for conditional moves is:
+vt = then-expr
+v = else-expr
+t = test-expr
+if (t) v = vt
+BOTH THE THEN AND ELSE EXPRESSIONS ARE EVALUATED FIRST. As a result, sometimes the conditional moves cannot be used (for example, when in the else you dereference a null pointer)
+
+Control Loops~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Do While Loops
+    loop:
+        body statement
+        t = test-expr
+        if (t)
+            goto loop:
+
+While Loops
+    t = test-expr
+    if (!t)
+        goto done:
+    loop:
+        body statement
+        t = test-expr
+        if (t)
+            goto loop:
+    done:
+
+For Loops
+    init-expr
+    t = test-expr
+    if (!t)
+        goto done:
+    loop:
+        body statement
+        update-expr
+        t = test-expr
+        if (t)
+            goto loop:
+    done:
+
+Switch Statements
+Create a Jump Table that contains
+    .section    .rodata
+    .align 4 #only for 32 bit, for 64 bit, align 8
+.jumptable:
+    .long   .section1   # eax = 0
+    .long   .section2   # eax = 1
+    .long   .etcetc     # eax = 2
+
+to jump to a case, do:
+    jmp *.jumptable(,%eax,4)
+    jumps to jumptable + eax*4
+    the 4 is needed because addresses are 4 bytes long
+
+
+Transferring Control~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+call    Label       Procedure Call
+call    *Operand    Procedure Call
+leave               Prepare stack for return
+ret                 Return from call
+
+Indexed Addressing Modes (Computation)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+D(Rb, Ri, S)        ->  Mem[Reg[Rb] + S*Reg[Ri] + D]
+    D   constant "displacement" 1, 2, or 4 bytes
+    Rb  base register (any of the 8 registers)
+    Ri  index register (any except for %esp)
+    S   scale (1, 2, 4, 8)
+Can use truncated forms too -> (Rb, Ri)
+                            -> D(Rb, Ri)
+                            -> (Rb, Ri, S)
+Examples:   %edx = 0xF000       %ecx = 0x100
+    0x8(%edx)           0xF000 + 0x8            0xF008
+    (%edx, %ecx)        0xF000 + 0x100          0xF100
+    (%edx, %ecx, 4)     0xF000 + 4*0x100        0xF400
+    0x80(, %edx, 2)     2*0xF000 + 0x80         0x1E080
+
+
+Example Assembly Programs~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+void swap(int *xp, int *yp)
+{
+    int t0 = *xp;
+    int t1 = *yp;
+    *xp = t1;
+    *yp = t0;
+}
+
+swap:
+    # ~~~~~~~~~~setup~~~~~~~~~~~~~~~~
+    pushl   %ebp
+    movl    %esp, %edp
+    pushl   %ebx
+
+    # ~~~~~~~~~~swap~~~~~~~~~~~~~~~~~
+    movl    12(%ebp), %ecx      # ecx = yp      -> copies yp into ecx from stack
+    movl    8(%ebp), %edx       # edx = xp      -> copies xp into edx from stack 
+    movl    (%ecx), %eax        # eax = *yp(t1) -> deref yp, move to eax
+    movl    (%edx), %ebx        # ebx = *xp(t0) -> deref xp, move to ebx
+    movl    %eax, (%edx)        # *xp = eax     -> moves eax to mem edx points to
+    movl    %ebx, (%ecx)        # *yp = ebx     -> moves ebx to mem ecx points to
+
+    # ~~~~~~~~~~finish~~~~~~~~~~~~~~~
+    movl    -4(%ebp), %ebx
+    movl    %ebp, %esp
+    popl    %ebp
+    ret
+
+REGISTER
+%ecx    yp
+%edx    xp
+%eax    t1
+%ebx    t0
+
+STACK
+ _
+|_| 12  yp
+|_| 8   xp
+|_| 4   return address
+|_| 0   <- %ebp
+|_| -4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

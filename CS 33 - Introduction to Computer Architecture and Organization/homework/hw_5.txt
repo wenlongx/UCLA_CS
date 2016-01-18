@@ -1,0 +1,13 @@
+Wenlong Xiong
+204407085
+
+12.18
+A) Unsafe, the L1 part of the trajectory enters the unsafe region
+B) Safe
+C) Unsafe, the L2 part of the trajectory enters the unsafe region
+
+12.24
+//rio_readn and rio_written
+Implicitly reentrant, because you could possibly write to a memory location (void *usrbuf) that another thread uses (shared memory)
+//rio_readinitb, rio_readlineb, rio_readnb, rio_read
+Implicitly reentrant, because you could possibly use the same read buffer memory location (rio_t *rp)

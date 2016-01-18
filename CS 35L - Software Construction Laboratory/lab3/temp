@@ -1,0 +1,46 @@
+Lab 3
+Wenlong Xiong
+204407085
+
+
+First, I downloaded the tar ball:
+    wget https://ftp.gnu.org/gnu/coreutils/coreutiles-7.6.tar.gz > 
+coreutils-7.6.tar.gz
+Then I used the command
+    tar -xvf coreutils-7.6.tar.gz
+to unzip the file into the folder coreutils-7.6/
+    cd coreutils-7.6/
+
+I then ran the following commands to install coreutils-7.6. The path 
+/home/wenlong/Desktop/lab3 is the path to the temporary directory that the 
+coreutils is being installed on:
+    ./configure --prefix=/home/wenlong/Desktop/lab3
+    make
+    make install
+I then ran the following command to generate the locale
+    locale-gen en_US.UTF-8
+Then, I ran the ls command:
+    ls -l /bin/bash
+Which yielded the following line of output
+    -rwxr-xr-x 1 root root 1021112 2014-10-07 12:22 /bin/bash
+This is the YYYY-MM-DD date format instead of the traditional Unix date format
+
+To fix this bug, I modified the file src/ls.c
+    vim src/ls.c
+I removed line 2014:
+    case_long_iso_time_style:
+And removed lines 2031-2038 inclusive. I replaced them with the lines
+                    long_time_format[i] = dcgettext (NULL, long_time_format[i], 
+LC_TIME);
+Then I ran the command to rebuild the file
+    make
+Then I ran the ls command
+    touch a.txt
+    touch -t 200402291621.42 b.txt //this changes the modified time to 2004, 
+Feb 29, 16:21:42
+and ran the ls command on both of them to make sure it works:
+    ls -l
+which output the following:  
+    -rw-r--r--   1 wenlongx  wenlong     0 Oct 16 01:27 a.txt
+    -rw-r--r--   1 wenlongx  wenlong     0 Feb 29  2004 b.txt
+    drwxr-xr-x  65 wenlongx  wenlong  2210 Oct 16 00:14 coreutils-7.6

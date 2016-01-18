@@ -1,0 +1,119 @@
+Wenlong Xiong
+204407085
+Lab 5
+
+I first ssh'ed into the linux remote server with the following command:
+    ssh xiong@lnxsrv.seas.ucla.edu
+I then downloaded the coreutils tarball and unzipped it with the following 
+commands:
+    wget 
+http://web.cs.ucla.edu/classes/fall15/cs35L/assign/coreutils-with-bug.tar.gz
+    tar -xvf coreutils-with-bug.tar.gz
+    cd coreutils-with-bug/
+I built the unmodified coreutils with the commands:
+    ./configure CFLAGS="-O0 -g" --prefix=/u/cs/ugrad/xiong/coreutils-with-bug/
+    make
+    make install
+I ended up with the following error message:
+    In file included from utimecmp.c:41:0:
+    utimens.h:2:5: error: conflicting types for 'futimens'
+     int futimens (int, char const *, struct timespec const [2]);
+         ^
+    In file included from utimecmp.h:25:0,
+                     from utimecmp.c:25:
+    /usr/include/sys/stat.h:374:12: note: previous declaration of 'futimens' 
+was here
+     extern int futimens (int __fd, __const struct timespec __times[2]) __THROW;
+                ^
+    Makefile:659: recipe for target 'utimecmp.o' failed
+I then downloaded the patch file as well:
+    wget http://web.cs.ucla.edu/classes/fall15/cs35L/assign/coreutils.diff
+and applied the patch:
+    patch -p0 < coreutils.diff
+I then rebuilt coreutils:
+    ./configure CFLAGS="-O0 -g" --prefix=/u/cs/ugrad/xiong/coreutils-with-bug/
+    make
+    make install
+The renaming patch fixed this problem, because futimens is previously declared 
+in the /usr/include/sys/stat.h file, as a function that takes 2 arguments. The 
+renaming patch renames the version of futimens in utimens.h to another name so 
+that it does not conflict with the version in stat.h
+
+I then reproduced the bug by entering the following commands:
+    mktemp -d
+    cd /tmp/tmp.cTWHUpkqvW/
+    touch -d '1918-11-11 11:00 GMT' wwi-armistice
+    touch now
+    touch now1
+    TZ=UTC0 /u/cs/ugrad/xiong/coreutils-with-bug/src/ls -lt --full-time 
+wwi-armistice now now1
+Which yielded the following output:
+    -rw-r--r-- 1 xiong csugrad 0 1918-11-11 11:00:00.000000000 +0000 
+wwi-armistice
+    -rw-r--r-- 1 xiong csugrad 0 2015-10-30 22:58:26.562277611 +0000 now1
+    -rw-r--r-- 1 xiong csugrad 0 2015-10-30 22:58:24.226188561 +0000 now
+I then ran the program in the debugger:
+    gdb
+And then in gdb, I entered the following commands:
+    file /u/cs/ugrad/xiong/coreutils-with-bug/src/ls
+    set disassemble-next-line on
+    break qsort
+    run -lt wwi-armistice now1 now
+I set the breakpoint at qsort, because it handles the sorting of the lines 
+printed by ls. Specifically, we're trying to look at the comparison function 
+qsort uses - compare_mtime.
+I used the following commands to go to the next line of machine code, or to 
+step into functions:
+    si
+    ni
+And the following command to look at the values inside the registers:
+    info registers
+Looking at the machine code, compare_mtime leads into cmp_mtime, then into 
+timespec_cmp.
+    => 0x000000000040244d <timespec_cmp+45>:    29 c2   sub    %eax,%edx
+    (gdb) info registers
+    rax            0xffffffff9fcef830   -1613826000
+    rbx            0x831dc16    137485334
+    rcx            0x0  0
+    rdx            0x563401b5   1446248885
+    0x000000000040244f in timespec_cmp ()
+    => 0x000000000040244f <timespec_cmp+47>:    89 d0   mov    %edx,%eax
+    (gdb) info registers
+    rax            0xffffffff9fcef830   -1613826000
+    rbx            0x831dc16    137485334
+    rcx            0x0  0
+    rdx            0xb6650985   3060074885
+    0x0000000000402451 in timespec_cmp ()
+    => 0x0000000000402451 <timespec_cmp+49>:    89 45 fc    mov    
+%eax,-0x4(%rbp)
+    (gdb) info registers
+    rax            0xb6650985   3060074885
+    rbx            0x831dc16    137485334
+    rcx            0x0  0
+    rdx            0xb6650985   3060074885
+The problem lies in the timespec_cmp function - it simply subtracts %eax from 
+%edx, and doesn't account for the fact that the difference could overflow. To 
+solve this problem, I changed the diff into a series of if-else statements that 
+check to see if one of the times are greater/less than the other.
+First, I made a copy of the lib/timespec.h file that contained the timespec_cmp 
+function:
+    cp lib/timespec.h lib/timespec_copy.h
+Then I opened the file in vim and made my modifications:
+    vim lib/timespec.h
+Then I created my diff file, and manually changed the timespec_copy.h to 
+timespec.h. I also manually added a changelog entry.
+    diff -u lib/timespec.h lib/timespec_copy.h > lab5.diff
+    vim lab5.diff
+I then ran the ls again, this time in my home directory, with the currently 
+installed ls command.
+    touch -d '1918-11-11 11:00 GMT' wwi-armistice
+    touch now
+    touch now1
+    TZ=UTC0 ls -lt --full-time wwi-armistice now now1
+I got the following output:
+    -rw-r--r-- 1 xiong csugrad 0 2054-12-17 17:28:16.000000000 +0000 
+wwi-armistice
+    -rw-r--r-- 1 xiong csugrad 0 2015-11-01 04:26:36.223479000 +0000 now1
+    -rw-r--r-- 1 xiong csugrad 0 2015-11-01 04:26:32.990586000 +0000 now
+wwi-armistice is sorted to the top again. In addition, there is an additional 
+bug - the year is shown as 2054, instead of 1918.

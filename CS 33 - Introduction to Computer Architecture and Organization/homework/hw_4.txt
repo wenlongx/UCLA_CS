@@ -1,0 +1,45 @@
+Wenlong Xiong
+204407085
+
+2.88
+A)
+This would always yield 1. When an int is converted to a double on the right hand side, it keeps its precise value. As a result, when the double on the right side is converted to a float, it is rounded the same way as the left hand side (converting an int to a float), and as a result always yields the same results.
+B)
+This would not always yield 1. If x were INT_MIN and y were 1, the result of x-y would overflow and be INT_MAX, while the result of dx-dy would not overflow (because doubles can hold a larger value than ints).
+C)
+This would always yield 1. Because dx, dy, dz all are int's converted to doubles, it is guaranteed that the fractional part of the converted double contains 8 or less significant bits (a double can hold a max of 52 fractional bits). This means that during addition, it is guaranteed that no rounding will occur (even if we add the largest possible and smallest possible values, the double's fractional bits can hold the exact value without rounding). As a result, the addition will be commutative, and this would always yield 1.
+D)
+This would not always yield 1. Even though dx, dy, and dz are int's converted to doubles, multiplication could cause overflow. As a result, depending on which order multiplication occurs, the rounding could be different, and the final result could be different.
+E)
+This would not always yield 1, because 0.0/0.0 and infinity/infinity yields NaN, while all other numbers yield 1.
+
+2.89
+float fpwr2(int x)
+{
+    /* Result exponent and fraction */
+    unsigned exp, frac;
+    unsigned u;
+    if (x < -149) {
+        /* Too small. Return 0.0 */
+        exp = 0;
+        frac = 0;
+    } else if (x < -126) {
+        /* Denormalized result */
+        exp = 0;
+        frac = (1 << (149 + x));
+    } else if (x < 128) {
+        /* Normalized result. */
+        exp = x + 127;
+        frac = 0;
+    } else {
+        /* Too big.  Return +oo */
+        exp = 255;
+        frac = 0;
+    }
+    
+    /* Pack exp and frac into 32 bits */
+    u = exp << 23 | frac;
+    
+    /* Return as float */
+    return u2f(u);
+}

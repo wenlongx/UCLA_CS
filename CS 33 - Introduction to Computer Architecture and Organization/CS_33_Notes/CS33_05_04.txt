@@ -1,0 +1,39 @@
+loop unrolling
+sequential optimization
+
+*p += *q - *r
+optimized turns into
+    *p += *q
+    *p -= *r
+if p = r (aliasing) then the optimization gives you a problem
+
+optimize via parallelism
+    goal is not to decrease power
+    goal is not to decrease CPU cycles
+    we're actually spending more energy/cpu cycles
+multiple computers:
+    break problem up into several pieces
+    several computers figure out each part individually
+    combine the individual answers
+one computer, multiple CPU's
+    multiple processors
+    multiple cores - the ones with EIP and registers
+    CPU's communicate via the shared memory
+multiple executing at the same time
+
+Instruction level parallelism (ILP)
+    applications can be oblivious of it
+    requires some understanding of microarchitecture - a processor system design
+    
+uop - micro operation
+
+ILP implementation
+    pipelining
+    superscalar implementation
+    out of order execution
+
+Branch prediction:
+    Guess which way you branch - keep track of what happened the last time you branched
+    Loop unrolling no longer helps
+
+register renaming - registration system uses a different register than the micro-op thinks it's using
