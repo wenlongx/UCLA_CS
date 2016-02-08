@@ -37,10 +37,15 @@ Coursework for most of the technical classes I've completed. This is a reference
         * Lab 5  
         * Lab 7  
         * Lab 9  
+    * CS 111
+        * Lab 1
+        * Weensy OS
 * Bash  
     * CS 35L  
         * Lab 2  
         * Lab 7  
+    * CS 111
+        * Lab 1
 * Python  
     * CS 35L  
         * Lab 3  
