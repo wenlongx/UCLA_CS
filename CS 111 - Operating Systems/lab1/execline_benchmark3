@@ -1,0 +1,4 @@
+#!/usr/local/cs/execline-2.1.4.5/bin/execlineb
+
+# Benchmark 3 #############################################
+redirfd -w 1 c pipeline { ls -Ral /usr/local/cs } pipeline { tr " " "\n" } pipeline { sort } pipeline { wc -l } cat

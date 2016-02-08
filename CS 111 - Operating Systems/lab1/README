@@ -1,0 +1,41 @@
+Michael Xiong
+UID: 404463570
+Wenlong Xiong
+UID: 204407085
+
+Lab 1C
+Lab 1B Design Project
+
+===================
+1c changes
+===================
+
+In order to implement the --profile option, we ran getrusage at the start of each iteration of the while loop. This gave us a staring time of the option. Then, when the option finished executing, we ran getrusage again to get a finishing time. By subtracting the two, we could get the cpu usage under both user and kernel mode of the option in the parent process. For child processes, we simply ran getrusage once at the end of the --wait option to sum up the cpu usage for all child processes run.
+
+With this functionality, we wrote three test cases to test the --profile option. Then, we translated these three test cases into both Bash and Execline, and ran benchmarks for all three shells. Each shells' benchmarks were run 3 times, and then averaged. The results can be seen in the report. These tests are also run as part of make check.
+
+=====================
+DESIGN PROJECT CHANGES
+=====================
+
+For our design project, we added functionality for simpsh to wait on a specific command, and its corresponding child process. In order to do so, we treated logical pid's similarly to the logical fd's used in simpsh. In other words, the first child process spawned by simpsh from a --command option would correspond to a logical pid of 0, and this is what the user would use to refer to a speific process. The real pid is stored in an array (already implemented as part of lab 1b), and not shown to the user.
+
+In order to wait on a specific process, the user uses a newly implemented option, --waitsingle instead of the general --wait. Waitsingle takes one argument, the number of the logical pid to be waited on. We would have simply extended the --wait option to take an optional argument, but because of the way getopt_long handles optional arguments, it was infeasible for us to parse an optional argument from the command line. Therefore, we created a new option that required a single argument.
+
+Once the argument is taken in, simpsh looks up the true pid from the logical pid, and calls waitpid on the looked up true pid. When the process exits, simpsh reaps the zombie, and behaves in a manner similar to --wait (printint out relevant data about the process's execution). Once this is done, it sets that pid to -1, in order to indicate the exit of the child process. simpsh then accomodates for the reaped child, and will skip over said child in the --wait option.
+
+
+
+=====================
+ORIGINAL README
+=====================
+
+simpsh behaves as described in the spec. File descriptors are opened as defined by the options given, then commands are run using the file descriptors and the arguments passed in following the command option. The program checks for syntax errors in the options given, such as passing an argument to --verbose, or not passing any to --rdonly. However, errors such as referencing a file descriptor that has not yet been opened are not accounted for, and the program will exhibit undefined behavior.
+
+The Makefile has options: make, make clean, make check, and make dist.
+
+Make compiles the program, allowing for execution. Make clean removes all intermediary files in the compilation process. Make check runs tests in the compilation process, and make dist will compress the files into a tarball for distribution.
+
+To work around the infinite waiting bug when pipes are opened, we closed all file descriptors except those in use in the child processes. This ensured that the child would not be waiting for the write end to close while reading, as only the relevant end of the pipe would be open for a specific process. The files are not closed in the --wait option. However, it is suggested the the --close option be used accordingly.
+
+To our knowledge, this program behaves as defined in the spec, and there are no known limitations.

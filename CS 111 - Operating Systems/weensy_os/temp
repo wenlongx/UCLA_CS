@@ -1,0 +1,81 @@
+59d58
+< 
+113c112,114
+< 	current->waiting_pid = -1;
+---
+> 
+> 	current->p_blocked = 0;
+> 
+174,176c175,178
+< 		if(current->waiting_pid != -1){
+< 		  proc_array[current->waiting_pid].p_state = P_RUNNABLE;
+< 		  proc_array[current->waiting_pid].p_registers.reg_eax=current->p_exit_status;
+---
+> 		if (current->p_blocked) {
+> 				proc_array[current->p_blocked].p_state = P_RUNNABLE;
+> 				proc_array[current->p_blocked].p_registers.reg_eax = current->p_exit_status;
+> 				proc_array[current->p_blocked].p_blocked = 0;
+194,201c196,202
+< 		else if (proc_array[p].p_state == P_ZOMBIE){
+< 		  current->p_registers.reg_eax = proc_array[p].p_exit_status;
+< 		  proc_array[p].p_state=P_EMPTY;}
+< 		else{
+< 		  //current->p_registers.reg_eax = WAIT_TRYAGAIN;
+< 		  current->p_state = P_BLOCKED;
+< 		  proc_array[p].waiting_pid = current->p_pid;
+< }
+---
+> 		else if (proc_array[p].p_state == P_ZOMBIE)
+> 			current->p_registers.reg_eax = proc_array[p].p_exit_status;
+> 		else {
+> 			current->p_registers.reg_eax = WAIT_TRYAGAIN;
+> 			proc_array[p].p_blocked = current->p_pid;
+> 			current->p_state = P_BLOCKED;
+> 		}
+251,262c252,266
+<   pid_t i;
+<   for(i=1;i<NPROCS;i++){
+<     if(proc_array[i].p_state==P_EMPTY)
+<       break;}
+<   if(i==NPROCS)
+<       return -1;
+<   proc_array[i].p_registers=parent->p_registers;
+<   copy_stack(&proc_array[i],parent);
+<   proc_array[i].p_state=P_RUNNABLE;
+<   proc_array[i].p_registers.reg_eax=0;  
+<   proc_array[i].waiting_pid = -1;
+< return i;
+---
+> 	
+> 	int p;
+> 	for (p = 1; p <= NPROCS; p++) {
+> 		if (proc_array[p].p_state == P_EMPTY) {
+> 			proc_array[p].p_registers = parent->p_registers;
+> 			copy_stack((&proc_array[p]), parent);
+> 			proc_array[p].p_state = parent->p_state;
+> 			proc_array[p].p_registers.reg_eax = 0;
+> 			proc_array[p].p_pid = p;
+> 			proc_array[p].p_blocked = 0;
+> 			return p;
+> 		}
+> 	}
+> 
+> 	return -1;
+320c324
+< 	src_stack_top = PROC1_STACK_ADDR + (src->p_pid)*PROC_STACK_SIZE;
+---
+> 	src_stack_top = PROC1_STACK_ADDR + (src->p_pid * PROC_STACK_SIZE); /* YOUR CODE HERE */
+322,324c326,328
+< 	dest_stack_top = PROC1_STACK_ADDR + (dest->p_pid)*PROC_STACK_SIZE;
+< 	dest_stack_bottom = dest_stack_top - src_stack_top + src_stack_bottom;
+< 	memcpy((void*)dest_stack_top,(void*)src_stack_top,src_stack_top-src_stack_bottom);
+---
+> 	dest_stack_top = PROC1_STACK_ADDR + (dest->p_pid * PROC_STACK_SIZE); /* YOUR CODE HERE */
+> 	dest_stack_bottom = dest_stack_top - (src_stack_top - src_stack_bottom); /* YOUR CODE HERE: calculate based on the
+> 				 other variables */
+325a330
+> 	memcpy((void *) dest_stack_top, (void *) src_stack_top, (size_t) (src_stack_top - src_stack_bottom));
+326a332
+> 	
+327a334
+> 

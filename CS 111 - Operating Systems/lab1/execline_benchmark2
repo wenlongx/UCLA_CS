@@ -1,0 +1,4 @@
+#!/usr/local/cs/execline-2.1.4.5/bin/execlineb
+
+# Benchmark 2 #############################################
+redirfd -w 1 a pipeline { sort -R words.txt } pipeline { sort } pipeline { tr a-z A-Z } pipeline { comm words.txt - } cat

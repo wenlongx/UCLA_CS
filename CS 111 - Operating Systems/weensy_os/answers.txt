@@ -1,0 +1,64 @@
+Wenlong Xiong
+UID: 204407085
+
+1)
+When the process that called sys_getpid() runs again, the call will have returned the correct value. This is because in the previous line, the PID is stored in current->p_registers.reg_eax, or in other words, the process's registers. When we replaced interrupt() with schedule(), sys_getpid() continually runs the next available runnable process. However, whenever a new process is run, the old process's registers are saved into memory. As a result, when the original process is run again, the registers are loaded from memory and are the same as before the process switch.
+
+2)
+Edited functions:
+in mpos-kern.c:
+	do_fork()
+	copy_stack()
+
+3)
+Edited functions:
+in mpos-kern.c:
+	start()
+	interrupt()
+	do_fork()
+in mpos-kern.h:
+	struct process
+
+4)
+Edited functions:
+in mpos-kern.c:
+	interrupt()
+	do_fork()
+
+5) Extra Credit
+void start(void)
+{
+	int x = 0;
+
+	int* volatile ptr = &x; // new code
+
+	pid_t p = sys_fork();
+	if (p == 0) {
+		x = 1;		// new code
+		ptr = &x;	// new code
+		(*ptr) = 1;	// new code
+	}
+	else if (p > 0) {
+		sys_wait(p);
+	}
+	app_printf("%d", x);
+	sys_exit(0);
+}
+
+6)
+Edited functions:
+in mpos.h:
+	defined INT_SYS_NEWTHREAD
+in mpos-app.h:
+	sys_newthread()
+in mpos-kern.c:
+	interrupt()
+
+7)
+Edited functions:
+in mpos.h:
+	defined INT_SYS_KILL
+in mpos-app.h:
+	sys_kill()
+in mpos-kern.c:
+	interrupt()
