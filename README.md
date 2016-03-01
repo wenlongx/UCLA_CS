@@ -40,6 +40,8 @@ Coursework for most of the technical classes I've completed. This is a reference
     * CS 111
         * Lab 1
         * Weensy OS
+        * Lab 2
+        * Lab 3
 * Bash  
     * CS 35L  
         * Lab 2  

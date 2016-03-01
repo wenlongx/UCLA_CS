@@ -1,0 +1,10 @@
+775c775
+< 		uint32_t* indirect_block = (uint32_t*) ospfs_block(oi->oi_indirect);
+---
+> 		uint32_t indirect_block = (uint32_t *)	ospfs_block(oi->oi_indirect);
+790,791c790,791
+< 		uint32_t* indirect2_block = (uint32_t *) ospfs_block(oi->oi_indirect2);
+< 		uint32_t* indirect_block = (uint32_t *) ospfs_block(indirect2_block[indir_index(n)]);
+---
+> 		uint32_t indirect2_block = (uint32_t *)	ospfs_block(oi->oi_indirect2);
+> 		uint32_t indirect_block = (uint32_t *)	ospfs_block(indirect2_block[indir_index(n)]);

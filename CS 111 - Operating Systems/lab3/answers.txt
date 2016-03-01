@@ -1,0 +1,31 @@
+# Fill in your name, student ID, and email address in this file.
+# If you are working in a team, fill out the information for both team 
+# members.
+
+# SUBMIT THE LAB ONLY ONCE (from only one partner). This file will be
+# automatically parsed in order to give both team members credit for the
+# lab.
+
+# If you did one or more extra credit problems, indicate which one in the
+# appropriate section below (remove the # sign first). If you have any other
+# information you'd like us to know, please add it at the end of the file.
+
+# Partner 1
+Name: Wenlong Xiong
+Student ID: 204407085
+Email: wenlongx@ucla.edu
+
+# Partner 2 (if you're working in a team)
+Name: Michael Xiong
+Student ID: 404463570
+Email: mmxiong@ucla.edu
+
+# Extra credit problems
+#Extra credit problem: none
+
+# Add any other information you'd like us to know below this line.
+We wrote some additional test cases in "lab3-tester.pl". They are the last 3 tests, and can be run with the commands
+	./lab3-tester.pl 18
+	./lab3-tester.pl 19
+	./lab3-tester.pl 20
+respectively. They test creation of symbolic and hard links, as well as their functions.
