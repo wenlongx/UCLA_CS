@@ -1,0 +1,112 @@
+Name: Wenlong Xiong
+UCLA ID: 204407085
+
+Collaborators:
+
+-------------------------------------------------------------------------------
+
+Response to Exercise 1:
+
+The name of the scheduling algorithm is:
+This scheduling algorithm is Round Robin. Each time schedule() is called, we move from the current process to the process with the next lowest PID and allow it to run. This allows every process to work for an amount of time before we run our original process again.
+
+
+(Exercise 2 is a coding exercise)
+schedos-kern.c
+	line 377-386
+schedos-1.c
+	line 90-92
+
+Response to Exercise 3:
+
+Average turnaround time for scheduling_algorithm 0:
+((1277 ms) + (1278 ms) + (1279 ms) + (1280 ms)) = 1278.5 ms
+Average turnaround time for scheduling_algorithm 1:
+((320 ms) + (640 ms) + (960 ms) + (1280 ms)) / 4 = 800 ms
+
+Average wait time for scheduling_algorithm 0:
+((0 ms) + (1 ms) + (2 ms) + (3 ms)) / 4 = 1.5 ms
+Average wait time for scheduling_algorithm 1:
+((0 ms) + (320 ms) + (640 ms) + (960 ms)) / 4 = 480 ms
+
+
+
+Exercise 4:
+
+Did you complete Exercise 4A, Exercise 4B, or both for extra credit?
+I completed both 4A and 4B.
+Exercise 4A:
+Exercise 4A implements a new system call sys_priority(int priority) that sets the priority level for the process. The priority levels are also initially set in schedos-kern.c. If we would like to use these instead of letting the processes set their own, the line in schedos-1.c can be commented out.
+	schedos-1.c
+		lines 21-24, 64, 71
+	schedos.h
+		lines 17
+	schedos-app.h
+		lines 67-84
+	schedos-kern.h
+		lines 34
+	schedos-kern.c
+		lines 130-134, 201-207, 360-376
+Exercise 4B:
+Exercise 4B implements a new system call sys_share(int share) that sets the number of shares for the process. The shares are also initially set in schedos-kern.c. If we would like to use these instead of letting the processes set their own, the line in schedos-1.c can be commented out.
+	schedos-1.c
+		lines 26-29, 65, 71
+	schedos.h
+		lines 18
+	schedos-app.h
+		lines 87-104
+	schedos-kern.h
+		lines 35-36
+	schedos-kern.c
+		lines 135-139, 209-215, 331-359
+
+
+Exercise 5:
+The interrupt occurs either in Process 4 before it prints '4' in the 5th round-robin iteration. This is because the first few characters of the SchedOS screen are as follows:
+1234 1234 1234 1234 1231
+The 5th '4' does not print, and a 1 prints instead. Because the interrupt cannot occur in the kernel process, it occurs in process 4. It cannot occur in process 3 after the '3' prints and before the sys_yield() is called, because the interrupt calls schedule(), and as a result the system would continue on to process 4 and print '4' anyways. The only possibility is that the interrupt occurs in process 4 before '4' is printed, and that the schedule() the interrupt calls causes the system to activate process 1.
+
+(Exercise 6 is a coding exercise)
+For Exercise 6, I implemented a new system call called sys_replace_and_increment(uint16_t* volatile* addr_ptr, int printchr, uint16_t incr_size). This system call replaces the value at **addr_ptr with the value of printchr, then increments *addr_ptr by incr_size. I use it in schedos-1.c by passing in &cursorpos as addr_ptr, PRINTCHAR as printchr, and 1 as incr_size. You can enable this functionality by commenting the "#define __EXERCISE_8__" in schedos-1.c
+
+Exercise 6:
+	schedos-app.h
+		lines 107-125
+	schedos.h
+		lines 19
+	schedos-1.c
+		lines 37-40, 79
+	schedos-kern.c
+		lines 217-226
+
+Anything else you'd like us to know:
+
+Extra credit exercises:
+Exercise 7:
+For Exercise 7, I implemented lottery scheduling as scheduling_algorithm 4. I also implemented a new system call called sys_lottery(int num_tickets) that allows each process to set its own number of lottery tickets. In addition, because I ran into trouble including the required libraries to use the C rand() function, I wrote my own pseudorandom number generator called lottery_random(). It uses a linear feedback shift register mechanism to generate a random 32 bit unsigned integer. I use it to generate the random lottery ticket.
+Exercise 7:
+	schedos-app.h
+		lines 127-143
+	schedos.h
+		lines 20
+	schedos-1.c
+		lines 67-68
+	schedos-kern.h
+		lines 37
+	schedos-kern.c
+		lines 6-8, 123-124, 228-230, 264-276, 299-330
+
+Exercise 8:
+For Exercise 8, I implemented locking. I created a lock called "writelock" in schedos-kern.c. If "writelock" is 1, a process holds the lock, and if it is 0, no process holds the lock. I made two new system calls - sys_lock_acquire(int * retval) and sys_lock_release(int * retval) - that tried to acquire/release the lock that was defined in schedos-kern.c. They set the value of *retval to 1 if the acquire/release was a success, or to 0 if it was a failure. The locking implementation for Exercise 8 can be enabled by uncommenting the line "#define __EXERCISE_8__" in schedos-1.c
+Exercise 8:
+	schedos-1.c
+		lines 42-54, 79
+	schedos-app.h
+		lines 145-174
+	schedos.h
+		lines 21-22
+	schedos-kern.h
+		lines 42
+	schedos-kern.c
+		lines 94-95, 232-248
+

@@ -1,0 +1,31 @@
+Questions 1.1
+At ~100 threads and ~100 iterations each, the program fairly consistently (~80% of the time) results in a failure.
+400 iter, for 100 threads
+	1) It takes this many threads and iterations because without them, the race condition is unlikely to occur. In order for failure, a thread must be interrupted between calculating sum and setting pointer equal to sum. With few threads, it is unlikely for execution to be interrupted here, as it is unlikely for execution to be interrupted at all (few threads means less scheduling and each thread gets more cpu time). Therefore, as we increase the number of threads, we increase the number of times each thread will be interrupting, and as a result, we see the failure more often. With more iterations, we are simply extending the timeframe for which a failure might occur. 
+	2) This question was addressed in the previous answer. To reiterate, fewer threads require fewer scheduling changes between the threads. Therefore, the threads are more often allowed to continually work. This eliminates the race condition that exists when execution is interrupted between the addition and the memory write.
+
+Questions 1.2
+	1) The average cost drops as iterations increases as our function incurs overhead when creating and joining threads. By increasing iterations, this cost is distributed and mitigated.
+	2) We would have to find the correct cost by ignoring the overhead of these operations. This can be done by sufficiently distributing the overhead cost to many iterations. As iterations approaches infinity, our cost will get closer to the "real" cost.
+	3) The --yield runs are much slower as we forcibly incuded a context switch between threads. Each context switch incurrs overhead which adds to the time required to finish the entire process. However, these overheads are not useful work, and are essentially "lost cycles" where no useful work is done.
+	4) This depends on the definition of "valid" times. If valid times is defined to be the raw amount of time each iteration takes, then it is not possible, as we are incurring overhead with each iteration that cannot be elimintated.
+
+Questions 1.3
+	1) For low numbers of threads, the number of context switches between threads is low. Therefore, the overhead incurred through them is negligible, and the vast majority of time will be spent doing useful work.
+	2) The three protected operations slow down as threads must sometimes wait when they are unable to acquire a write lock. During these times, overhead is incurred, but no work is done before another context switch is done (the thread must give up control as it can not continue working).
+	3) Spin locks force a thread to continually check for the availability of a lock without any guarantee that it will be able to acquire the lock and do useful work. In fact, a large majority of the time, it can be the case that all threads are waiting on a single lock, and any thread not holding that lock will have to wake up, check, do no work, yield, and allow another thread to run. All of this work is not useful, and is considered overhead. If only one thread in 100 can run (holds the lock), then any of the 99 other threads waking up will simply be wasted cycles.
+
+
+Questions 2.1
+	1) This is due to the overhead incurred 
+Questions 2.2
+	1) Although our graphs and data differ from what is to be expected, a general trend of increasing time per operation can be seen. However, the increase is much greater in part 2 as the operations involved (manipulation of linked lists) are much more complex than in Part 1. Therefore, it is natural for there to be a higher slope.
+Questions 2.3
+	2) Threads per list is much more interesting since with more lists, the chance of two threads wanting to write to the same list goes down. Therefore, it is a more accurate indication of how performance will suffer as the threads increases. In other words, performance will suffer less if there are more lists.
+
+Questions 3.1
+	1) Without the mutex, shared data between threads may be overwritten, as a race may occur between evaluating the condition and waiting.
+	2) If the mutex is not released, the program may hang forever, as other threads could be waiting on the mutex held by the sleeping thread. Nobody would be able to do any work.
+	3) Without the mutex, the thread cannot guarantee that mutually shared data will not be overwritten, even if its wake condition was met.
+	4) This is another protection against race conditions. If the mutex is not released within the system call, then other threads may interrupt execution between the release and the wait.
+	5) This cannot be done as a user operation, since these actions must be atomic. The only way to guarantee atomicity of these operations is to implement them as a system call.
